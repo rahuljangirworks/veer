@@ -2,14 +2,19 @@ export function resolveOrchestrationCliExecutable(
   env: NodeJS.ProcessEnv = process.env,
   platform: NodeJS.Platform = process.platform
 ): string {
-  const configured = env.ORCA_CLI_COMMAND?.trim()
+  const configured = (env.VEER_CLI_COMMAND ?? env.ORCA_CLI_COMMAND)?.trim()
   if (configured) {
     return configured
   }
-  if (env.ORCA_DEV_REPO_ROOT) {
-    return 'orca-dev'
+  if (env.VEER_DEV_REPO_ROOT) {
+    return 'veer-dev'
   }
-  return platform === 'linux' ? 'orca-ide' : 'orca'
+  if (env.ORCA_DEV_REPO_ROOT) {
+    return 'veer-dev'
+  }
+  // Keep recovery commands aligned with the executable that ships as `veer`.
+  void platform
+  return 'veer'
 }
 
 export function buildOrchestrationRecoveryCommand(

@@ -1,35 +1,31 @@
 import { RuntimeClientError } from '../../runtime-client'
+import {
+  ORCHESTRATION_CLI_COMMANDS,
+  ORCHESTRATION_WINDOWS_CLI_COMMANDS,
+  type OrchestrationCliCommand,
+  type OrchestrationWindowsCliCommand
+} from '../../../shared/orchestration-cli-command'
 
-export function resolveCompatibilityCliCommand():
-  | 'veer'
-  | 'veer-dev'
-  | 'orca'
-  | 'orca-ide'
-  | 'orca-dev' {
-  const configured = process.env.VEER_CLI_COMMAND ?? process.env.ORCA_CLI_COMMAND
-  if (
-    configured === 'veer' ||
-    configured === 'veer-dev' ||
-    configured === 'orca' ||
-    configured === 'orca-ide' ||
-    configured === 'orca-dev'
-  ) {
-    return configured
+export function resolveCompatibilityCliCommand(): OrchestrationCliCommand {
+  const configured = (process.env.VEER_CLI_COMMAND ?? process.env.ORCA_CLI_COMMAND)?.trim()
+  if (configured && ORCHESTRATION_CLI_COMMANDS.includes(configured as OrchestrationCliCommand)) {
+    return configured as OrchestrationCliCommand
   }
   return 'veer'
 }
 
 export function resolvePackagedWindowsCompatibilityCommand():
-  | 'veer'
-  | 'orca'
-  | 'orca-ide'
+  | OrchestrationWindowsCliCommand
   | undefined {
   if (process.env.ORCA_WINDOWS_PACKAGED_CLI_LAUNCHER !== '1') {
     return undefined
   }
-  const command = process.env.VEER_CLI_COMMAND ?? process.env.ORCA_CLI_COMMAND
-  if (command === 'veer' || command === 'orca' || command === 'orca-ide') {
-    return command
+  const command = (process.env.VEER_CLI_COMMAND ?? process.env.ORCA_CLI_COMMAND)?.trim()
+  if (
+    command &&
+    ORCHESTRATION_WINDOWS_CLI_COMMANDS.includes(command as OrchestrationWindowsCliCommand)
+  ) {
+    return command as OrchestrationWindowsCliCommand
   }
   throw new RuntimeClientError(
     'invalid_argument',

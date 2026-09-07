@@ -5,6 +5,10 @@ import type { TaskStatus } from '../../orchestration/db'
 import { isGroupAddress } from '../../orchestration/groups'
 import { MESSAGE_TYPES } from '../../orchestration/types'
 import { OrchestrationError } from '../../orchestration/orchestration-error'
+import {
+  ORCHESTRATION_CLI_COMMANDS,
+  ORCHESTRATION_WINDOWS_CLI_COMMANDS
+} from '../../../../shared/orchestration-cli-command'
 
 export const TASK_STATUSES: TaskStatus[] = [
   'pending',
@@ -36,7 +40,7 @@ export async function routeAllMailboxPages(
 
 const SEND_MESSAGE_TYPE_ERROR = [
   `Invalid --type. Expected one of: ${MESSAGE_TYPES.join(', ')}.`,
-  'To answer a worker question, use the same Orca CLI executable with orchestration reply --id <msg_id> --body <text>.'
+  'To answer a worker question, use the same Veer CLI executable with orchestration reply --id <msg_id> --body <text>.'
 ].join(' ')
 
 export type DispatchMutationMessageType =
@@ -141,7 +145,7 @@ export const CheckParams = z
     ack: OptionalString,
     compatibilityAck: OptionalString,
     compatibilityQuestionAck: OptionalString,
-    compatibilityCliCommand: z.enum(['orca', 'orca-ide', 'orca-dev']).optional(),
+    compatibilityCliCommand: z.enum(ORCHESTRATION_CLI_COMMANDS).optional(),
     run: OptionalString,
     wait: OptionalBoolean,
     timeoutMs: OptionalFiniteNumber
@@ -241,8 +245,8 @@ export const AskParams = z
     timeoutMs: OptionalFiniteNumber,
     from: OptionalString,
     run: OptionalString,
-    compatibilityCliCommand: z.enum(['orca', 'orca-ide', 'orca-dev']).optional(),
-    compatibilityWindowsCommand: z.enum(['orca', 'orca-ide']).optional()
+    compatibilityCliCommand: z.enum(ORCHESTRATION_CLI_COMMANDS).optional(),
+    compatibilityWindowsCommand: z.enum(ORCHESTRATION_WINDOWS_CLI_COMMANDS).optional()
   })
   .superRefine((params, ctx) => {
     if ((params.question ? 1 : 0) + (params.resume ? 1 : 0) !== 1) {

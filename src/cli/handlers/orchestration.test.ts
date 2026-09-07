@@ -2,12 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const callMock = vi.fn()
 const getTerminalHandleMock = vi.hoisted(() => vi.fn())
-const originalTerminalHandle = process.env.ORCA_TERMINAL_HANDLE
-const originalPaneKey = process.env.ORCA_PANE_KEY
-function lifecycleGroupRecipientError(type: 'worker_done' | 'heartbeat'): string {
-  return `${type} messages belong to one exact Dispatch and cannot target a group address.`
-}
-
+const originalTerminalHandle = process.env.ORCA_TERMINAL_HANDLE,
+  originalPaneKey = process.env.ORCA_PANE_KEY
 // Why: isolate the handler's flag-to-param mapping; printResult only writes output.
 vi.mock('../format', () => ({ printResult: vi.fn() }))
 vi.mock('../selectors', () => ({ getTerminalHandle: getTerminalHandleMock }))
@@ -161,7 +157,8 @@ describe('orchestration send structured payload flags', () => {
       )
     ).rejects.toMatchObject({
       code: 'invalid_argument',
-      message: lifecycleGroupRecipientError('worker_done')
+      message:
+        'worker_done messages belong to one exact Dispatch and cannot target a group address.'
     })
 
     expect(getTerminalHandleMock).not.toHaveBeenCalled()
@@ -181,7 +178,7 @@ describe('orchestration send structured payload flags', () => {
       )
     ).rejects.toMatchObject({
       code: 'invalid_argument',
-      message: lifecycleGroupRecipientError('heartbeat')
+      message: 'heartbeat messages belong to one exact Dispatch and cannot target a group address.'
     })
 
     expect(getTerminalHandleMock).not.toHaveBeenCalled()
@@ -695,7 +692,8 @@ describe('orchestration timeout flag validation', () => {
       all: undefined,
       types: undefined,
       format: undefined,
-      compatibilityCliCommand: expect.stringMatching(/^orca(?:-ide)?$/),
+      compatibilityCliCommand: 'veer',
+      inject: undefined,
       run: undefined,
       ack: undefined,
       wait: true,
@@ -824,7 +822,7 @@ describe('orchestration timeout flag validation', () => {
         options: undefined,
         timeoutMs: 123,
         from: 'term_worker',
-        compatibilityCliCommand: expect.stringMatching(/^orca(?:-ide)?$/),
+        compatibilityCliCommand: 'veer',
         compatibilityWindowsCommand: undefined
       },
       { timeoutMs: 5_123, orchestrationCapability: undefined }
@@ -855,7 +853,7 @@ describe('orchestration timeout flag validation', () => {
         options: undefined,
         timeoutMs: undefined,
         from: 'term_worker',
-        compatibilityCliCommand: expect.stringMatching(/^orca(?:-ide)?$/),
+        compatibilityCliCommand: 'veer',
         compatibilityWindowsCommand: undefined
       },
       { timeoutMs: 605_000, orchestrationCapability: undefined }

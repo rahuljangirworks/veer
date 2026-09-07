@@ -6,12 +6,14 @@ import {
 
 describe('orchestration recovery command identity', () => {
   it.each([
+    ['configured Veer', { VEER_CLI_COMMAND: 'veer' }, 'darwin', 'veer'],
+    ['configured Veer dev', { VEER_DEV_REPO_ROOT: '/repo' }, 'darwin', 'veer-dev'],
     ['configured dev', { ORCA_CLI_COMMAND: 'orca-dev' }, 'darwin', 'orca-dev'],
     ['configured WSL', { ORCA_CLI_COMMAND: 'orca-ide' }, 'linux', 'orca-ide'],
-    ['dev checkout', { ORCA_DEV_REPO_ROOT: '/repo' }, 'darwin', 'orca-dev'],
-    ['packaged Linux', {}, 'linux', 'orca-ide'],
-    ['local macOS', {}, 'darwin', 'orca'],
-    ['local Windows', {}, 'win32', 'orca']
+    ['legacy dev checkout', { ORCA_DEV_REPO_ROOT: '/repo' }, 'darwin', 'veer-dev'],
+    ['packaged Linux', {}, 'linux', 'veer'],
+    ['local macOS', {}, 'darwin', 'veer'],
+    ['local Windows', {}, 'win32', 'veer']
   ] as const)('resolves the %s CLI identity', (_name, env, platform, expected) => {
     expect(resolveOrchestrationCliExecutable(env, platform)).toBe(expected)
   })
