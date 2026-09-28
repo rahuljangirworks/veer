@@ -1,33 +1,18 @@
 import { installRuntimeLinearCommandSurface } from './runtime-linear-command-surface'
 import { OrcaRuntimeWithResolveWaiter } from './orca-runtime-resolve-waiter'
 import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
-
-import { veerPlatformClient } from '../veer/artifacts/platform-client'
+import { registerWorktreeChangeInvalidator } from '../ipc/worktree-change-invalidators'
+import { registerDetectedWorktreeScanInvalidation } from '../ipc/worktrees/listing/register-detected-worktree-scan-invalidation'
 
 class OrcaRuntimeService extends OrcaRuntimeWithResolveWaiter {
-  // --- Veer Platform Delegates ---
-  publishArtifactShare(id: string, options: any) {
-    return veerPlatformClient.publishArtifact(id, options, () => {})
+  constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithResolveWaiter>) {
+    super(...args)
+    // Why: the runtime listing re-runs a scan the worktree-change generation overtook and re-lists
+    // through this runtime's scan cache, so a worktree change must reach both. The desktop IPC
+    // module registers the generation bump at load; a headless host never loads it.
+    registerDetectedWorktreeScanInvalidation()
+    registerWorktreeChangeInvalidator((repoId) => this.invalidateWorktreeCatalog(repoId))
   }
-  unpublishArtifactShare(id: string, options: any) {
-    return veerPlatformClient.unpublishArtifact(id, options, () => {})
-  }
-  shareArtifactWith(id: string, request: any, options: any) {
-    return veerPlatformClient.shareArtifact(id, request, options, () => {})
-  }
-  shareArtifactLink(id: string, request: any, options: any) {
-    return veerPlatformClient.shareArtifact(id, request, options, () => {})
-  }
-  revokeArtifactShare(id: string, options: any) {
-    return veerPlatformClient.unpublishArtifact(id, options, () => {})
-  }
-  listArtifactShares(id: string, options: any) {
-    return veerPlatformClient.listShares(id, options, () => {})
-  }
-  listSharedWithMeArtifacts(options: any) {
-    return veerPlatformClient.listSharedWithMe(options, () => {})
-  }
-  // -----------------------------
 }
 type OrcaRuntimeServiceExport = RuntimeCommandSurfaceHost<OrcaRuntimeService>
 const OrcaRuntimeServiceExport = OrcaRuntimeService as unknown as {

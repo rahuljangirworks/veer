@@ -20,7 +20,6 @@ import {
   revokeOrcaCloudSession
 } from './profile-cloud-client'
 import { beginOrcaCloudPkceFlow } from './profile-cloud-pkce'
-import { beginOrcaCloudDeviceFlow, DeviceAuthorizationError } from './profile-cloud-device-flow'
 import {
   createCloudLinkedOrcaProfileRecord,
   linkOrcaProfileToCloud,
@@ -36,6 +35,14 @@ import { getOrcaProfileAuthStatusFromProfile } from './profile-cloud-auth-status
 import { selectCloudOrgWithMutationFence } from './profile-cloud-org-selection'
 
 export { refreshCurrentOrcaProfileAuth } from './profile-cloud-capability-refresh'
+
+let nextCloudConnectAttempt = 0
+let linkedCloudConnectAttempt = 0
+
+function invalidateOutstandingCloudConnectAttempts(): void {
+  nextCloudConnectAttempt += 1
+  linkedCloudConnectAttempt = nextCloudConnectAttempt
+}
 
 function isUserCancelledAuthError(message: string): boolean {
   return message === 'orca_cloud_auth_timeout' || message === 'orca_cloud_auth_denied'
@@ -74,70 +81,46 @@ export async function connectCurrentOrcaProfile(
     }
   }
 
-  // Try device flow first (better for SSH/remote scenarios)
-  // Fall back to PKCE loopback if device flow fails or is cancelled
+  const attempt = ++nextCloudConnectAttempt
   try {
-    const deviceResponse = await beginOrcaCloudDeviceFlow(
-      configState.config,
-      active.profile.id,
-      undefined, // No progress callback for now
-      undefined // No abort signal for now
-    )
-    // Normalize to expected format (snake_case to camelCase)
-    const exchange = {
-      accessToken: deviceResponse.access_token,
-      refreshToken: deviceResponse.refresh_token,
-      expiresAt: deviceResponse.expiresAt,
-      cloud: deviceResponse.cloud,
-      organizations: deviceResponse.organizations,
-      capabilities: deviceResponse.capabilities
+    const code = await beginOrcaCloudPkceFlow(configState.config, active.profile.id)
+    if (attempt < linkedCloudConnectAttempt) {
+      return {
+        status: 'cancelled',
+        auth: getCurrentOrcaProfileAuthStatus(userDataPath)
+      }
+    }
+    const exchange = await exchangeOrcaCloudAuthCode(configState.config, {
+      ...code,
+      localProfileId: active.profile.id
+    })
+    if (attempt < linkedCloudConnectAttempt) {
+      return {
+        status: 'cancelled',
+        auth: getCurrentOrcaProfileAuthStatus(userDataPath)
+      }
     }
     saveOrcaCloudSessionExchange(active.profile.id, userDataPath, exchange)
     const list = linkOrcaProfileToCloud(active.profile.id, exchange.cloud, userDataPath)
+    linkedCloudConnectAttempt = attempt
     return {
       status: 'connected',
       auth: getCurrentOrcaProfileAuthStatus(userDataPath),
       activeProfileId: list.activeProfileId,
       profiles: list.profiles
     }
-  } catch (deviceError) {
-    // Device flow failed - try PKCE loopback as fallback
-    const deviceMessage = deviceError instanceof Error ? deviceError.message : String(deviceError)
-    if (deviceError instanceof DeviceAuthorizationError && deviceError.code === 'cancelled') {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (isUserCancelledAuthError(message)) {
       return {
         status: 'cancelled',
         auth: getCurrentOrcaProfileAuthStatus(userDataPath)
       }
     }
-
-    // Fall back to PKCE loopback
-    try {
-      const code = await beginOrcaCloudPkceFlow(configState.config, active.profile.id)
-      const exchange = await exchangeOrcaCloudAuthCode(configState.config, {
-        ...code,
-        localProfileId: active.profile.id
-      })
-      saveOrcaCloudSessionExchange(active.profile.id, userDataPath, exchange)
-      const list = linkOrcaProfileToCloud(active.profile.id, exchange.cloud, userDataPath)
-      return {
-        status: 'connected',
-        auth: getCurrentOrcaProfileAuthStatus(userDataPath),
-        activeProfileId: list.activeProfileId,
-        profiles: list.profiles
-      }
-    } catch (pkceError) {
-      const message = pkceError instanceof Error ? pkceError.message : String(pkceError)
-      if (isUserCancelledAuthError(message)) {
-        return {
-          status: 'cancelled',
-          auth: getCurrentOrcaProfileAuthStatus(userDataPath)
-        }
-      }
-      return {
-        status: 'failed',
-        auth: getCurrentOrcaProfileAuthStatus(userDataPath),
-        error: `Device flow failed (${deviceMessage}), PKCE fallback failed (${message})`
-      }
+    return {
+      status: 'failed',
+      auth: getCurrentOrcaProfileAuthStatus(userDataPath),
+      error: message
     }
   }
 }
@@ -145,6 +128,10 @@ export async function connectCurrentOrcaProfile(
 export async function signOutCurrentOrcaProfile(
   userDataPath: string
 ): Promise<SignOutCurrentOrcaProfileResult> {
+  // Why: a Sign in click still waiting in the browser must not relink after
+  // the user explicitly signed out.
+  invalidateOutstandingCloudConnectAttempts()
+  const signOutEpoch = linkedCloudConnectAttempt
   const active = ensureActiveOrcaProfile(userDataPath)
   const configState = getOrcaCloudAuthConfig()
   const session = readOrcaCloudSession(active.profile.id, userDataPath)
@@ -158,6 +145,15 @@ export async function signOutCurrentOrcaProfile(
   }
   if (!isOrcaCloudDevAuthEnabled() && configState.configured && session.status === 'found') {
     await revokeOrcaCloudSession(configState.config, session.session).catch(() => undefined)
+  }
+  if (linkedCloudConnectAttempt > signOutEpoch) {
+    const current = ensureActiveOrcaProfile(userDataPath)
+    return {
+      status: 'signed-out',
+      auth: getCurrentOrcaProfileAuthStatus(userDataPath),
+      activeProfileId: current.index.activeProfileId,
+      profiles: current.index.profiles
+    }
   }
   clearOrcaCloudSession(active.profile.id, userDataPath)
   const list = unlinkOrcaProfileFromCloud(active.profile.id, userDataPath)

@@ -1,4 +1,6 @@
 import type { IPty } from 'node-pty'
+import { canUseBunPty } from '../daemon/pty-subprocess/bun-pty-process-capabilities'
+import { loadWindowsBunPtyJobNative } from '../daemon/pty-subprocess/windows-bun-pty-native'
 import { createRequire } from 'node:module'
 import { recordSelfInitiatedTreeKill } from '../crash-reporting/self-initiated-tree-kill-log'
 
@@ -31,6 +33,19 @@ type ConptyNative = {
   terminateJob: (id: number, shellPid: number) => boolean
   listJobProcessIds: (id: number, shellPid: number) => number[] | null
   assignCurrentProcessToJob: () => boolean
+}
+
+type SelfOwnedPty = IPty & {
+  jobRootProcessIsWrapper?: true
+  shellProcessId?: number
+  terminateOwnedTree?: () => JobTerminationOutcome
+  listOwnedProcessIds?: () => readonly number[] | null
+}
+
+/** The gate's pid never proves that its user shell remains alive. */
+export function ptyShellProcessId(proc: IPty): number | undefined {
+  const owned: SelfOwnedPty = proc
+  return owned.jobRootProcessIsWrapper ? owned.shellProcessId : proc.pid
 }
 
 let cachedNative: ConptyNative | null | undefined
@@ -89,6 +104,23 @@ export type JobTerminationOutcome = 'terminated' | 'unavailable'
  * to be misread as "nothing to kill".
  */
 export function terminatePtyJob(proc: IPty): JobTerminationOutcome {
+  const owned: SelfOwnedPty = proc
+  if (typeof owned.terminateOwnedTree === 'function') {
+    let outcome: JobTerminationOutcome
+    try {
+      outcome = owned.terminateOwnedTree()
+    } catch {
+      return 'unavailable'
+    }
+    if (outcome === 'terminated') {
+      recordSelfInitiatedTreeKill({
+        pid: proc.pid,
+        site: 'windows-pty-job-teardown',
+        scope: 'win-pty-job'
+      })
+    }
+    return outcome
+  }
   const target = ptyJobTarget(proc)
   const native = nativeLoader()
   if (!target || !native) {
@@ -118,8 +150,10 @@ export function terminatePtyJob(proc: IPty): JobTerminationOutcome {
 /**
  * Pids still alive in a PTY's tree, or null when there is no answer.
  *
- * Measured on Windows 11: once the shell exits, node-pty drops its handle
- * record and closes the job, so a terminated tree reports **null**, not `[]`.
+ * Measured on Windows 11: once the shell exits, node-pty closes the job, so a
+ * terminated tree reports **null**, not `[]`. (Its handle record now outlives
+ * the shell until `kill()` runs — see config/patches/node-pty@1.1.0.patch — but
+ * the nulled job handle is what makes the answer null either way.)
  * Null therefore means "unverifiable" in the sense of
  * docs/reference/ssh-execution-boundary.md — this build has no job support,
  * the terminal is not a ConPTY, or it is no longer tracked. It is never
@@ -130,6 +164,14 @@ export function terminatePtyJob(proc: IPty): JobTerminationOutcome {
  * including children that detached from the console.
  */
 export function listPtyJobProcessIds(proc: IPty): readonly number[] | null {
+  const owned: SelfOwnedPty = proc
+  if (typeof owned.listOwnedProcessIds === 'function') {
+    try {
+      return owned.listOwnedProcessIds()
+    } catch {
+      return null
+    }
+  }
   const target = ptyJobTarget(proc)
   const native = nativeLoader()
   if (!target || !native) {
@@ -191,7 +233,7 @@ function assignHostProcessOnce(): boolean {
 
 /** Whether this build can own PTY trees with job objects at all. */
 export function isPtyJobOwnershipAvailable(): boolean {
-  return nativeLoader() !== null
+  return canUseBunPty() ? loadWindowsBunPtyJobNative() !== null : nativeLoader() !== null
 }
 
 /** Test-only: substitute the native module (it is resolved via createRequire). */

@@ -5,7 +5,6 @@ import type { RepoHookSettings } from './orca-yaml-hook-types'
 import type { PersistedState } from './persisted-state-types'
 import type { PersistedUIState } from './persisted-ui-state-types'
 import type { AgentActivityDisplayMode } from './ui-chrome-types'
-import type { WorkspaceSessionState } from './workspace-session-state-types'
 import { EMPTY_CODEX_RESET_CREDIT_ATTEMPT_LEDGER } from './codex-reset-credit-attempt-ledger'
 import { DEFAULT_STATUS_BAR_ITEMS } from './status-bar-defaults'
 import type { VoiceSettings } from './speech-types'
@@ -17,8 +16,10 @@ import { DEFAULT_STATUS_BAR_USAGE_MODE } from './status-bar-usage-mode'
 import { buildDefaultSettings } from './default-global-settings'
 import { DEFAULT_SETUP_AGENT_STARTUP_POLICY } from './setup-agent-startup-policy'
 import { DEFAULT_BROWSER_PAGE_ZOOM_LEVEL } from './browser-page-zoom'
+import { getDefaultWorkspaceSession } from './default-workspace-session'
 
 export { DEFAULT_STATUS_BAR_ITEMS } from './status-bar-defaults'
+export { getDefaultWorkspaceSession } from './default-workspace-session'
 export {
   COMPACT_WORKTREE_CARD_PROPERTIES,
   DEFAULT_WORKTREE_CARD_PROPERTIES,
@@ -180,6 +181,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     terminalInactivePaneOpacity: DEFAULT_TERMINAL_INACTIVE_PANE_OPACITY,
     terminalRightClickToPaste: getDefaultTerminalRightClickToPaste(),
     notifications: getDefaultNotificationSettings(),
+
     voice: getDefaultVoiceSettings()
   })
 }
@@ -281,6 +283,7 @@ export function getDefaultUIState(): PersistedUIState {
     agentsFilterRepoIds: [],
     agentsShowChildAgents: false,
     agentsCompactMode: true,
+    agentsShowSearch: true,
     agentsReadFilter: DEFAULT_AGENTS_READ_FILTER,
     agentsGroupBy: DEFAULT_AGENTS_GROUP_BY,
     collapsedGroups: [],
@@ -302,6 +305,7 @@ export function getDefaultUIState(): PersistedUIState {
     usagePercentageDisplay: DEFAULT_USAGE_PERCENTAGE_DISPLAY,
     statusBarUsageMode: DEFAULT_STATUS_BAR_USAGE_MODE,
     dismissedUpdateVersion: null,
+    dismissedUnexpectedSignoutVersion: null,
     lastUpdateCheckAt: null,
     trustedOrcaHooks: {},
     setupScriptPromptDismissedRepoIds: [],
@@ -326,24 +330,5 @@ export function getDefaultUIState(): PersistedUIState {
     featureInteractions: {},
     contextualToursSeenIds: [],
     browserDefaultZoomLevel: DEFAULT_BROWSER_PAGE_ZOOM_LEVEL
-  }
-}
-
-export function getDefaultWorkspaceSession(): WorkspaceSessionState {
-  return {
-    activeRepoId: null,
-    activeWorktreeId: null,
-    activeTabId: null,
-    tabsByWorktree: {},
-    terminalLayoutsByTabId: {},
-    openFilesByWorktree: {},
-    markdownFrontmatterVisible: {},
-    browserTabsByWorktree: {},
-    browserPagesByWorkspace: {},
-    activeBrowserTabIdByWorktree: {},
-    activeFileIdByWorktree: {},
-    activeTabTypeByWorktree: {},
-    browserUrlHistory: [],
-    defaultTerminalTabsAppliedByWorktreeId: {}
   }
 }

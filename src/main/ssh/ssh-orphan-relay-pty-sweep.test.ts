@@ -53,7 +53,8 @@ function createHarness(
     shutdown
   } as unknown as IPtyProvider
   const store = {
-    getSshRemotePtyLeases: vi.fn().mockReturnValue(leases)
+    getSshRemotePtyLeases: vi.fn().mockReturnValue(leases),
+    reconcileSshRemotePtyLeasesForTarget: vi.fn()
   } as unknown as Store
   return { provider, store, shutdown }
 }
@@ -213,7 +214,7 @@ describe('sweepOrphanedRelayPtys', () => {
       clearBindingsForTarget: () => {},
       clearBindingsForLeases: () => false,
       flush: () => {},
-      flushDurableStateOrThrowAsync: async () => {}
+      runDurableMutation: async (mutate) => mutate().value
     }
     // The same pane re-leases under a new relay id; pty-1 is expired, never terminated.
     upsertSshRemotePtyLease(operations, {

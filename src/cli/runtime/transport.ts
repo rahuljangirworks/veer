@@ -5,6 +5,7 @@ import type { RuntimeOrchestrationEnvelope } from '../../shared/runtime-rpc-enve
 import { isKeepaliveFrame, RuntimeRpcEnvelopeSchema } from './envelope-schema'
 import { RuntimeClientError, type RuntimeRpcResponse } from './types'
 import { MAX_TIMER_DELAY_MS, isSafeTimerDelayMs } from '../../shared/timer-delay'
+import { runtimeAccessDeniedError } from './runtime-access-denied'
 
 export async function sendRequest<TResult>(
   metadata: RuntimeMetadata,
@@ -25,13 +26,13 @@ export async function sendRequest<TResult>(
       reject(
         new RuntimeClientError(
           'runtime_unavailable',
-          'No compatible transport found in Veer runtime metadata.'
+          'No compatible transport found in Orca runtime metadata.'
         )
       )
       return
     }
     const socket = createConnection(transport.endpoint)
-    let buffer = ''
+    let lineSegments: string[] = []
     let settled = false
     const requestId = randomUUID()
 
@@ -40,11 +41,12 @@ export async function sendRequest<TResult>(
         return
       }
       settled = true
+      lineSegments = []
       socket.destroy()
       reject(
         new RuntimeClientError(
           'runtime_timeout',
-          'Timed out waiting for the Veer runtime to respond.'
+          'Timed out waiting for the Orca runtime to respond.'
         )
       )
     }, timeoutMs)
@@ -56,6 +58,7 @@ export async function sendRequest<TResult>(
         return
       }
       settled = true
+      lineSegments = []
       clearTimeout(timeout)
       socket.end()
       if (result.ok === false) {
@@ -66,13 +69,16 @@ export async function sendRequest<TResult>(
     }
 
     socket.setEncoding('utf8')
-    socket.once('error', () => {
+    socket.once('error', (error) => {
       finish({
         ok: false,
-        error: new RuntimeClientError(
-          'runtime_unavailable',
-          'Could not connect to the running Veer app. Restart Veer and try again.'
-        )
+        // Why: a sandbox denying the socket/pipe is not a dead app, so restart advice would mislead.
+        error:
+          runtimeAccessDeniedError(error, metadata.pid) ??
+          new RuntimeClientError(
+            'runtime_unavailable',
+            'Could not connect to the running Orca app. Restart Orca and try again.'
+          )
       })
     })
     // Why: a clean peer close (FIN, no 'error') before a terminal frame never
@@ -84,23 +90,32 @@ export async function sendRequest<TResult>(
         ok: false,
         error: new RuntimeClientError(
           'runtime_unavailable',
-          'The Veer runtime closed the connection before responding. Restart Veer and try again.'
+          'The Orca runtime closed the connection before responding. Restart Orca and try again.'
         )
       })
     })
     socket.on('data', (chunk: string) => {
-      buffer += chunk
       // Why: the server may interleave `{"_keepalive":true}\n` frames with the
       // final success/failure frame to keep both idle timers alive during a
       // long-poll (see design doc §3.1). Read frames in a loop until we see a
       // terminal frame. Each keepalive refreshes the client-side timer so a
       // 10 min wait doesn't trip the 60 s default ceiling.
-      let newlineIndex = buffer.indexOf('\n')
-      while (newlineIndex !== -1 && !settled) {
-        const line = buffer.slice(0, newlineIndex)
-        buffer = buffer.slice(newlineIndex + 1)
+      let cursor = 0
+      while (cursor < chunk.length && !settled) {
+        const newlineIndex = chunk.indexOf('\n', cursor)
+        if (newlineIndex === -1) {
+          lineSegments.push(chunk.slice(cursor))
+          return
+        }
+        const segment = chunk.slice(cursor, newlineIndex)
+        let line = segment
+        if (lineSegments.length > 0) {
+          lineSegments.push(segment)
+          line = lineSegments.join('')
+          lineSegments = []
+        }
+        cursor = newlineIndex + 1
         if (line.trim().length === 0) {
-          newlineIndex = buffer.indexOf('\n')
           continue
         }
 
@@ -112,24 +127,23 @@ export async function sendRequest<TResult>(
             ok: false,
             error: new RuntimeClientError(
               'invalid_runtime_response',
-              'The Veer runtime returned an invalid response frame.'
+              'The Orca runtime returned an invalid response frame.'
             )
           })
           return
         }
 
         // Fast-path: ignore keepalives without running the full schema.
-        // setTimeout().refresh() is stable since Node 10 (Veer ships on
+        // setTimeout().refresh() is stable since Node 10 (Orca ships on
         // Node 20+ via Electron and the standalone CLI targets the same
         // major). See §7 risk #9.
         if (isKeepaliveFrame(raw)) {
           timeout.refresh()
-          newlineIndex = buffer.indexOf('\n')
           continue
         }
 
         // Why: validate the envelope shape (id, ok, result/error, _meta) at
-        // the decode boundary so version skew between the CLI and the Veer
+        // the decode boundary so version skew between the CLI and the Orca
         // main runtime surfaces as a single invalid_runtime_response instead
         // of a downstream mis-typed field access. `result` is left as
         // unknown — the TResult generic is the caller's responsibility.
@@ -139,7 +153,7 @@ export async function sendRequest<TResult>(
             ok: false,
             error: new RuntimeClientError(
               'invalid_runtime_response',
-              'The Veer runtime returned an invalid response frame.'
+              'The Orca runtime returned an invalid response frame.'
             )
           })
           return
@@ -150,7 +164,6 @@ export async function sendRequest<TResult>(
         const frame = parsed.data
         if ('_keepalive' in frame) {
           timeout.refresh()
-          newlineIndex = buffer.indexOf('\n')
           continue
         }
 
@@ -160,7 +173,7 @@ export async function sendRequest<TResult>(
             ok: false,
             error: new RuntimeClientError(
               'invalid_runtime_response',
-              'The Veer runtime returned a mismatched response id.'
+              'The Orca runtime returned a mismatched response id.'
             )
           })
           return
@@ -170,7 +183,7 @@ export async function sendRequest<TResult>(
             ok: false,
             error: new RuntimeClientError(
               'runtime_unavailable',
-              'The Veer runtime changed while the request was in flight. Retry the command.'
+              'The Orca runtime changed while the request was in flight. Retry the command.'
             )
           })
           return

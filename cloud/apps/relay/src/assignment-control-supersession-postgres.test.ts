@@ -38,6 +38,10 @@ describePostgres('PostgreSQL control supersession', () => {
         [identity.userId]
       )
       await database.query(`DELETE FROM relay_assignments WHERE user_id = ?`, [identity.userId])
+      // A snapshot left by an aborted run rejects the replayed watermark with stale_connection_snapshot.
+      await database.query(`DELETE FROM relay_cell_connection_snapshots WHERE cell_id = ?`, [
+        cell.id
+      ])
       await database.query(`DELETE FROM relay_cell_connection_runtime WHERE cell_id = ?`, [cell.id])
       await database.query(`DELETE FROM relay_cell_connection_limits WHERE cell_id = ?`, [cell.id])
       await database.query(`DELETE FROM relay_cell_runtime WHERE cell_id = ?`, [cell.id])
@@ -96,6 +100,12 @@ describePostgres('PostgreSQL control supersession', () => {
         `control:${cell.id}:101`,
         cell.id
       ]
+    )
+    // The store reserves a unit per control lease, so a hand-written pair has to
+    // carry its own reservation or the fixture starts out of balance.
+    await databases[0]!.query(
+      `UPDATE relay_cells SET reserved_requests = reserved_requests + 2 WHERE cell_id = ?`,
+      [cell.id]
     )
     await stores[0]!.activateControl(identity, {
       cellId: cell.id,

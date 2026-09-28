@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AskParams, CheckParams } from './orchestration-schemas'
+import { AskParams, CheckParams } from './orchestration/schemas'
 
 const veerCommands = ['veer', 'veer-ide', 'veer-dev'] as const
 

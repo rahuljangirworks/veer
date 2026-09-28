@@ -37,35 +37,26 @@ identity (`google_service_account.github_deploy`, its provider, and its bindings
 with production-only counts; staging's copies are declared by `infra/terraform-apps`. An untargeted
 plan is orderable again; the `Plan:` line still reflects the standing cell-template drift backlog.
 
-### Dual-accept Workload Identity during the public extraction
+### Workload Identity trusts the public repository
 
-While the relay source moves to the public `stablyai/orca` repository, every relay Workload
-Identity provider accepts the same workflows from both repositories. `github_accepted_repositories`
-lists the extra repositories; `relay-github-workflow-trust.tf` renders one parenthesised OR arm per
-accepted repository, each arm carrying that repository's own `repository`, `repository_id`, and
-`repository_owner_id` claims plus its exact workflow refs. `ref`, `environment`, and `event_name`
-stay outside the OR. Workflow files keep their names in the private repo and take the
-`workflow_file_prefix` (`cloud-`) in the public one.
+The cutover closed on 2026-09-03. Every relay Workload Identity provider now accepts exactly one
+repository, `stablyai/orca` (`1183888342`, owner `127256420`), and every workflow ref it names is
+built from `github_workflow_file_prefix` (`cloud-`), which is the rename the public repo applies to
+the workflow files it carries. `github_repo`, `github_repo_id`, and that prefix are set in both
+`environments/*.tfvars` as well as defaulted here, and `github_accepted_repositories` is empty.
+Nothing in this root trusts `stablyai/orca-cloud` any more; the apps and foundation roots still do,
+because the app workflows still live there.
 
-Adding a repository is a tfvars edit: no provider block changes, and the rendered strings are
-pinned by `dev/scripts/workload-identity-attribute-conditions.test.mjs`. An empty list renders
-byte-identically to the single-repository form, which is what makes the arms reviewable against
-the pre-extraction condition.
+`github_accepted_repositories` stays available for the next repository move. Each entry renders its
+own parenthesised OR arm in `relay-github-workflow-trust.tf`, carrying that repository's own
+`repository`, `repository_id`, and `repository_owner_id` claims plus its exact workflow refs, while
+`ref`, `environment`, and `event_name` stay outside the OR. An empty list renders byte-identically
+to the single-repository form, so adding and removing a repository is a tfvars edit with no provider
+block change. The rendered strings are pinned by
+`dev/scripts/workload-identity-attribute-conditions.test.mjs`.
 
-Closing the cutover is an owner step, in this order:
-
-1. Retire the private workflows, so nothing runs from `stablyai/orca-cloud` any more.
-2. Point `github_owner`, `github_repo`, `github_repo_id`, and `github_owner_id` at
-   `stablyai/orca` (`1183888342`, owner `127256420`), and set `workflow_file_prefix` for it by
-   moving the surviving entry's prefix onto the primary: the public files keep the `cloud-` names,
-   so the primary prefix becomes `cloud-` unless the files are renamed back.
-3. Empty `github_accepted_repositories` in both `environments/*.tfvars`.
-4. Re-render and update the pinned conditions, then apply. Each provider goes back to a single
-   arm, and `google_service_account_iam_member.github_accepted_repository_workload_identity_user`
-   is destroyed as the primary `attribute.repository` binding takes over.
-
-Step 2 and step 3 must land in the same apply: dropping the accepted entry before repointing the
-primary would revoke the public repository mid-flight.
+Repointing the primary and emptying the list must land in the same apply: dropping the accepted
+entry before repointing the primary would revoke the surviving repository mid-flight.
 
 ### `ORCA_RELAY_IMAGE_DIGEST` is not Terraform-owned
 
@@ -320,8 +311,9 @@ Every `relay_gce_cells` entry is one durable cell generation and must pin both i
 image and its Artifact Registry relay image. Terraform creates one private COS instance template, one size-one zonal
 MIG, and one backend service for that exact host. The MIG uses `RECREATE`, zero surge, and one
 unavailable worker; `/health` alone drives autoheal while SQL/JWKS-backed `/ready` controls LB
-admission. The backend timeout is 86,400 seconds with connection draining, and the URL map aborts
-unknown wildcard hosts before they reach a worker. The startup script obtains short-lived metadata
+admission. The backend timeout is 86,400 seconds and connection draining is 60 seconds, which
+covers only a host still mid-handshake because the rollout drains a cell before Terraform runs.
+The URL map aborts unknown wildcard hosts before they reach a worker. The startup script obtains short-lived metadata
 credentials, fetches the two relay secrets without logging them, and runs a digest-pinned Cloud SQL
 Auth Proxy beside the digest-pinned relay image.
 
@@ -331,7 +323,8 @@ only additive regional resources; cells select the subnet from their declared
 region. Every cell also declares an explicit database pool maximum in startup
 metadata and deployment outputs. The initial Asia shape is `e2-standard-4`,
 3,000 physical connections, 60 unobserved connections, 6,000 request units,
-and a database pool maximum of 10.
+and a database pool maximum of 10. Production Asia pools now run at 16 and
+staging C4 stays at 10; the topology and director validators pin both.
 
 Provision the complete identical Asia wave in one `Deploy Relay Asia Topology`
 saved plan. Its validator permits only the additive subnet/router/NAT, reviewed
@@ -339,7 +332,10 @@ cell templates/MIGs/backends, and exact shared URL-map host additions. It
 rejects deletes, replacements, loss of an existing host route, US-resource
 changes, and unrelated drift. Do not add production C27-C29 until the
 compatible image has been published and each entry can pin its immutable
-digest.
+digest. A later cell, such as C30, is its own reviewed wave. The shared URL map
+pulls every live cell into its plan, so the workflow plans each live cell at the
+image its state template already serves, and the validator rejects any change
+to a cell outside the wave.
 
 Topology creation intentionally does not apply the director resource. Once all
 MIGs and backends are healthy, register every new cell atomically as

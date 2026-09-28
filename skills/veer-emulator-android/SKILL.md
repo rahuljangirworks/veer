@@ -1,70 +1,47 @@
 ---
 name: veer-emulator-android
-description: >
-  Control an Android emulator / device from inside Veer using the `veer` CLI.
-  Use for listing/booting AVDs, taps, swipes, typing, hardware buttons (incl. Back
-  and Recents), rotation, app install/launch, runtime permissions, the accessibility
-  tree, and logcat — driving a real adb-connected device or emulator. Cross-platform
-  (Windows, Linux, macOS). Complements the veer-emulator (iOS) and veer-cli skills.
+description: >-
+  Android device and emulator control from inside Orca over adb, with the live
+  device view in Orca's emulator pane. Use when driving an adb-connected emulator
+  or phone on Windows, Linux, or macOS: booting AVDs, taps, swipes, typing,
+  hardware buttons, rotation, app install and launch, runtime permissions, the
+  accessibility tree, and logcat. For an iOS simulator use the iOS emulator
+  skill; build the APK with Gradle first.
 license: Apache-2.0
 ---
 
-# Veer Emulator (Android)
+# Orca Emulator (Android)
 
-This file is a discovery stub, not the usage guide. The full, version-matched Veer Android
-emulator reference is served by the `veer` binary itself — kept out of this file on purpose
-so it can never drift from the binary that will actually run your commands.
-
-Engage Veer whenever you drive an adb-connected Android emulator or device from inside the
-Veer app: listing/booting AVDs, taps, swipes, typing, hardware buttons (including Back and
-Recents), rotation, app install/launch, runtime permissions, the accessibility tree, and
-logcat. It is cross-platform (Windows, Linux, macOS) and complements the veer-emulator (iOS)
-and veer-cli skills.
+This discovery stub loads the version-matched guide from the Orca executable used for this session.
 
 ## Resolve the CLI for this session
 
 Choose the executable once and reuse it for every later command:
 
-- If the `VEER_CLI_COMMAND` environment variable is set, use its value. Veer exports this
+- If the `ORCA_CLI_COMMAND` environment variable is set, use its value. Orca exports this
   for managed WSL sessions.
-- Otherwise, in a dev checkout whose session exposes `VEER_DEV_REPO_ROOT`, use `veer-dev`.
-- Otherwise, use `veer`. If it is unavailable, ask the user to install the Veer CLI from Settings.
+- Otherwise, in a dev checkout whose session exposes `ORCA_DEV_REPO_ROOT`, use `orca-dev`.
+- Otherwise, on Linux outside an Orca-managed terminal, use `orca-ide`. Never run bare
+  `orca` there — outside Orca's terminals it normally resolves to the
+  GNOME Orca screen reader (`/usr/bin/orca`) and starts speech on the user's machine.
+- Otherwise, use `orca`.
 
-Below, `VEER` is a placeholder for the executable you resolved. Substitute it before
-running anything; do not create a shell variable or run `VEER` literally. This works the
+Below, `ORCA` is a placeholder for the executable you resolved. Substitute it before
+running anything; do not create a shell variable or run `ORCA` literally. This works the
 same way in POSIX shells, PowerShell, and cmd.exe.
 
 If the selected executable cannot run, report its exact error and stop. Do not fall through
-to another executable, which could silently target a different Veer build.
+to another executable, which could silently target a different Orca build.
 
-## Load the full guide before running Veer commands
-
-```text
-VEER skills get veer-emulator-android
-```
-
-That prints the complete, version-matched guide for the exact binary that will handle your
-next commands — booting AVDs, taps and swipes, typing, hardware buttons, app lifecycle,
-permissions, the accessibility tree, and logcat. Read it first, then run the specific
-command you need.
-
-Don't guess subcommands or flags from memory or from a cached copy of this stub. They
-change between Veer releases, and this file deliberately no longer lists them. Confirm the
-app is up with `VEER status --json` (start it with `VEER open --json` if needed), and
-prefer `--json` for agent-driven calls.
-
-## If an older Veer does not recognize `skills get`
-
-Use this fallback only when the selected binary explicitly reports that `skills get` is an
-unknown command. Another failure is not proof of an older binary; report it rather than
-guessing or changing executables. For a confirmed pre-guide binary, use only this bounded,
-read-only bootstrap to orient. Do not dead-end and do not invent commands:
+## Load the version-matched guide before running Orca commands
 
 ```text
-VEER status --json
-VEER emulator devices --json
+ORCA skills get orca-emulator-android
 ```
 
-Then tell the user that updating Veer restores the full, version-matched guide via
-`VEER skills get veer-emulator-android`. Beyond these commands, ask the user rather than
-guessing a command surface this older binary may not support.
+Prefer `--json`. Use the selected executable's `--help` for commands or flags the guide does
+not cover. If a command reports that Orca is not running, start it with `ORCA open --json`
+and retry. If it fails with `runtime_access_denied`, your sandbox blocked the connection:
+re-run it with escalated permissions, and do not run `ORCA open` or restart Orca. If
+`skills get` is unknown, explain that updating Orca restores the guide; use `--help` for
+read-only discovery and do not guess unsupported commands.

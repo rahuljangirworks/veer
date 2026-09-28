@@ -2,6 +2,7 @@ import {
   formatAssignmentInventorySnapshot,
   readAssignmentInventorySnapshot
 } from './assignment-inventory-snapshot.js'
+import { readRegionCorrectionOutcomes } from './region-correction-outcomes.js'
 import { RelayAssignmentStore } from './assignment-store.js'
 import { loadRelayConfig } from './config.js'
 import { startCellHeartbeat } from './cell-heartbeat-client.js'
@@ -9,13 +10,15 @@ import {
   reconcileCellAdmissionAtStartup,
   roleOwnsAssignmentMaintenance
 } from './cell-admission-startup.js'
+import { openRelayDatabaseAtBoot } from './boot-database-open.js'
 import {
+  consumeRelayCellInventoryHold,
   consumeRelayDatabasePoolPressure,
-  openRelayDatabase,
   readRelayDatabasePoolPressure
 } from './database.js'
 import { runAssignmentCleanup } from './assignment-cleanup-steps.js'
 import { runRelayBackgroundOperation } from './relay-background-operation.js'
+import { jitteredSweepIntervalMs } from './relay-sweep-schedule.js'
 import { observedRelayRequests } from './relay-observability.js'
 import { startRegionalRehomeWorker } from './regional-rehome-worker.js'
 import { createRelayServer } from './relay-server.js'
@@ -25,7 +28,7 @@ import {
 } from './registered-migration-inventory.js'
 
 const config = loadRelayConfig()
-const database = await openRelayDatabase({
+const database = await openRelayDatabaseAtBoot({
   databaseUrl: config.databaseUrl,
   dataDir: config.dataDir,
   poolMax: config.databasePoolMax,
@@ -43,18 +46,23 @@ const {
   ready,
   cellIncarnation
 } = createRelayServer(config, database)
-const cleanupTimer = setInterval(
-  () =>
-    void runRelayBackgroundOperation(
-      () => store.cleanup(),
-      '[orca-relay] credential cleanup failed'
-    ),
-  30_000
-)
+// Same owner as the assignment sweep: the cleanup only expires credentials that every reader
+// already re-checks at read time, so running it in all 23 cells multiplied one table scan by 23
+// without changing any answer.
+const cleanupTimer = roleOwnsAssignmentMaintenance(config.role)
+  ? setInterval(
+      () =>
+        void runRelayBackgroundOperation(
+          () => store.cleanup(),
+          '[orca-relay] credential cleanup failed'
+        ),
+      jitteredSweepIntervalMs(30_000)
+    )
+  : null
 const assignmentCleanupTimer = roleOwnsAssignmentMaintenance(config.role)
   ? setInterval(() => {
       void runAssignmentCleanup(assignments)
-    }, 30_000)
+    }, jitteredSweepIntervalMs(30_000))
   : null
 const inventorySnapshotTimer = roleOwnsAssignmentMaintenance(config.role)
   ? setInterval(() => {
@@ -69,16 +77,24 @@ const migrationInventoryTimer = roleOwnsAssignmentMaintenance(config.role)
       void runRelayBackgroundOperation(async () => {
         const inventory = await readRegisteredMigrationInventory(database, Date.now())
         for (const line of formatRegisteredMigrationInventory(inventory)) console.warn(line)
+        console.log(
+          JSON.stringify({
+            event: 'orca_relay_region_correction_outcomes',
+            observedAt: Date.now(),
+            outcomes: await readRegionCorrectionOutcomes(database, Date.now())
+          })
+        )
       }, '[orca-relay] migration inventory failed')
     }, 5 * 60_000)
   : null
-cleanupTimer.unref()
+cleanupTimer?.unref()
 assignmentCleanupTimer?.unref()
 inventorySnapshotTimer?.unref()
 migrationInventoryTimer?.unref()
 observability.start(() => ({
   ...runtimeCounts(),
-  ...consumeRelayDatabasePoolPressure(database)
+  ...consumeRelayDatabasePoolPressure(database),
+  ...consumeRelayCellInventoryHold(database)
 }))
 const regionalRehomeWorker = startRegionalRehomeWorker(config, assignments, {
   safetySnapshot: () => ({
@@ -117,7 +133,7 @@ server.listen(config.port, () => {
 })
 
 const shutdown = (): void => {
-  clearInterval(cleanupTimer)
+  if (cleanupTimer) clearInterval(cleanupTimer)
   if (assignmentCleanupTimer) clearInterval(assignmentCleanupTimer)
   if (inventorySnapshotTimer) clearInterval(inventorySnapshotTimer)
   if (migrationInventoryTimer) clearInterval(migrationInventoryTimer)

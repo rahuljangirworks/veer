@@ -38,7 +38,7 @@ import { main } from './index'
 import { RuntimeClientError } from './runtime-client'
 import { buildWorktree, okFixture, queueFixtures, worktreeListFixture } from './test-fixtures'
 
-describe('veer cli browser page targeting', () => {
+describe('orca cli browser page targeting', () => {
   beforeEach(() => {
     callMock.mockReset()
   })
@@ -314,7 +314,77 @@ describe('veer cli browser page targeting', () => {
   })
 })
 
-describe('veer cli browser profile management', () => {
+describe('orca cli browser identity', () => {
+  beforeEach(() => {
+    callMock.mockReset()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('gets the host identity only after capability negotiation', async () => {
+    queueFixtures(
+      callMock,
+      okFixture('status', { capabilities: ['browser.identity.v1'] }),
+      okFixture('identity', {
+        identity: {
+          state: 'valid',
+          appliedMode: 'clean',
+          configuredMode: 'native',
+          explicitSelection: true,
+          migrationNoticePending: false,
+          restartRequired: true
+        },
+        migrationNotice: null
+      })
+    )
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(['browser', 'identity', 'get', '--json'], '/tmp/not-an-orca-worktree')
+
+    expect(callMock).toHaveBeenNthCalledWith(1, 'status.get')
+    expect(callMock).toHaveBeenNthCalledWith(2, 'browser.identity.get')
+  })
+
+  it('sets the host identity through the runtime writer', async () => {
+    queueFixtures(
+      callMock,
+      okFixture('status', { capabilities: ['browser.identity.v1'] }),
+      okFixture('identity', {
+        ok: true,
+        identity: {
+          state: 'valid',
+          appliedMode: 'clean',
+          configuredMode: 'native',
+          explicitSelection: true,
+          migrationNoticePending: false,
+          restartRequired: true
+        }
+      })
+    )
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(
+      ['browser', 'identity', 'set', '--mode', 'native', '--json'],
+      '/tmp/not-an-orca-worktree'
+    )
+
+    expect(callMock).toHaveBeenNthCalledWith(2, 'browser.identity.set', { mode: 'native' })
+  })
+
+  it('refuses an older runtime instead of guessing at identity support', async () => {
+    queueFixtures(callMock, okFixture('status', { capabilities: [] }))
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await main(['browser', 'identity', 'get'], '/tmp/not-an-orca-worktree')
+
+    expect(callMock).toHaveBeenCalledTimes(1)
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Update or restart Orca'))
+  })
+})
+
+describe('orca cli browser profile management', () => {
   beforeEach(() => {
     callMock.mockReset()
   })
@@ -392,7 +462,7 @@ describe('veer cli browser profile management', () => {
   })
 })
 
-describe('veer cli browser tab profiles', () => {
+describe('orca cli browser tab profiles', () => {
   beforeEach(() => {
     callMock.mockReset()
   })
@@ -433,29 +503,6 @@ describe('veer cli browser tab profiles', () => {
     expect(callMock).toHaveBeenCalledTimes(1)
     expect(callMock).toHaveBeenCalledWith('browser.profileList')
     expect(logSpy).toHaveBeenCalledWith('No browser profiles found.')
-  })
-
-  it('marks native-UA profiles in text output', async () => {
-    queueFixtures(
-      callMock,
-      okFixture('req_profiles_native_ua', {
-        profiles: [
-          {
-            id: 'google',
-            scope: 'isolated',
-            label: 'Google',
-            partition: 'persist:orca-browser-session-google',
-            source: null,
-            userAgentMode: 'native'
-          }
-        ]
-      })
-    )
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-
-    await main(['tab', 'profile', 'list'], '/tmp/not-an-orca-worktree')
-
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('ua:native'))
   })
 
   it('creates isolated browser tab profiles by default', async () => {
@@ -506,33 +553,6 @@ describe('veer cli browser tab profiles', () => {
     expect(callMock).toHaveBeenCalledWith('browser.profileCreate', {
       label: 'From Chrome',
       scope: 'imported'
-    })
-  })
-
-  it('creates a profile with the native user agent when requested', async () => {
-    queueFixtures(
-      callMock,
-      okFixture('req_profile_native_ua', {
-        profile: {
-          id: 'google',
-          scope: 'isolated',
-          label: 'Google',
-          partition: 'persist:orca-browser-session-google',
-          userAgentMode: 'native'
-        }
-      })
-    )
-    vi.spyOn(console, 'log').mockImplementation(() => {})
-
-    await main(
-      ['tab', 'profile', 'create', '--label', 'Google', '--no-ua-spoof', '--json'],
-      '/tmp/not-an-orca-worktree'
-    )
-
-    expect(callMock).toHaveBeenCalledWith('browser.profileCreate', {
-      label: 'Google',
-      scope: 'isolated',
-      userAgentMode: 'native'
     })
   })
 
@@ -587,7 +607,7 @@ describe('veer cli browser tab profiles', () => {
   })
 })
 
-describe('veer cli browser cookies', () => {
+describe('orca cli browser cookies', () => {
   beforeEach(() => {
     callMock.mockReset()
     process.exitCode = undefined
@@ -662,7 +682,7 @@ describe('veer cli browser cookies', () => {
   })
 })
 
-describe('veer cli browser waits and viewport flags', () => {
+describe('orca cli browser waits and viewport flags', () => {
   beforeEach(() => {
     callMock.mockReset()
     process.exitCode = undefined
@@ -722,18 +742,18 @@ describe('veer cli browser waits and viewport flags', () => {
     )
   })
 
-  it('does not tell users Veer is down for a generic runtime timeout', async () => {
+  it('does not tell users Orca is down for a generic runtime timeout', async () => {
     callMock.mockRejectedValueOnce(
       new RuntimeClientError(
         'runtime_timeout',
-        'Timed out waiting for the Veer runtime to respond.'
+        'Timed out waiting for the Orca runtime to respond.'
       )
     )
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     await main(['wait', '--selector', '#ready', '--worktree', 'all'], '/tmp/not-an-orca-worktree')
 
-    expect(errorSpy).toHaveBeenCalledWith('Timed out waiting for the Veer runtime to respond.')
+    expect(errorSpy).toHaveBeenCalledWith('Timed out waiting for the Orca runtime to respond.')
   })
 
   it('passes the mobile viewport flag through to browser.viewport', async () => {

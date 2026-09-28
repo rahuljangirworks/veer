@@ -16,9 +16,9 @@ async function makeFixture(): Promise<{ userDataPath: string; resourcesPath: str
   const root = await mkdtemp(join(tmpdir(), 'veer-terminal-cli-shim-'))
   created.push(root)
   const resourcesPath = join(root, 'resources')
-  // The bundled orca-ide launcher must exist for the shim to be written.
+  // The bundled veer-ide launcher must exist for the shim to be written.
   mkdirSync(join(resourcesPath, 'bin'), { recursive: true })
-  writeFileSync(join(resourcesPath, 'bin', 'orca-ide'), '#!/usr/bin/env bash\n', 'utf8')
+  writeFileSync(join(resourcesPath, 'bin', 'veer-ide'), '#!/usr/bin/env bash\n', 'utf8')
   return { userDataPath: join(root, 'user-data'), resourcesPath }
 }
 
@@ -39,7 +39,7 @@ describe('ensureLinuxTerminalVeerCliShimDir', () => {
     expect(shimDir).toBe(join(userDataPath, 'linux-veer-cli-shim'))
     const content = readFileSync(join(shimDir!, 'veer'), 'utf8')
     // Single-quoted so a resources path with shell metacharacters can't break out.
-    expect(content).toContain(`exec '${join(resourcesPath, 'bin', 'orca-ide')}' "$@"`)
+    expect(content).toContain(`exec '${join(resourcesPath, 'bin', 'veer-ide')}' "$@"`)
     const mode = statSync(join(shimDir!, 'veer')).mode & 0o777
     expect(mode & 0o111).not.toBe(0)
   })
@@ -72,7 +72,7 @@ describe('ensureLinuxTerminalVeerCliShimDir', () => {
     })
     expect(healed).not.toBeNull()
     const healedPath = join(healed!, 'veer')
-    expect(readFileSync(healedPath, 'utf8')).toContain('orca-ide')
+    expect(readFileSync(healedPath, 'utf8')).toContain('veer-ide')
     expect(statSync(healedPath).mode & 0o111).not.toBe(0)
   })
 
@@ -107,7 +107,7 @@ describe('ensureLinuxTerminalVeerCliShimDir', () => {
     // userData path succeeds — proving failures are not cached.
     const resourcesPath = join(root, 'resources')
     mkdirSync(join(resourcesPath, 'bin'), { recursive: true })
-    writeFileSync(join(resourcesPath, 'bin', 'orca-ide'), '#!/usr/bin/env bash\n', 'utf8')
+    writeFileSync(join(resourcesPath, 'bin', 'veer-ide'), '#!/usr/bin/env bash\n', 'utf8')
     const recovered = ensureLinuxTerminalVeerCliShimDir({
       userDataPath,
       resourcesPath,

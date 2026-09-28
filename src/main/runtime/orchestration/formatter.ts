@@ -1,5 +1,6 @@
 import type { MessageRow } from './types'
 import { ORCHESTRATION_LEGACY_RUN_ID } from '../../../shared/orchestration-rpc-contract'
+import type { OrchestrationCliCommand } from './cli-command'
 
 const BANNER_WIDTH = 60
 const SEPARATOR = '─'.repeat(BANNER_WIDTH)
@@ -90,7 +91,7 @@ export function formatMessageBanner(
       msg.to_handle.startsWith('run:') || msg.to_handle.startsWith('dispatch:')
         ? ''
         : ` --from ${msg.to_handle}`
-    lines.push(`[Reply: veer orchestration reply --id ${msg.id}${explicitFrom} --body "..."]`)
+    lines.push(`[Reply: orca orchestration reply --id ${msg.id}${explicitFrom} --body "..."]`)
   }
   lines.push(SEPARATOR)
 
@@ -108,10 +109,14 @@ export function formatMessagesForInjection(messages: MessageRow[]): string {
   return `\n--- Orchestration Messages (${messages.length}) ---\n${banners}\n---\n`
 }
 
-export function formatMessagePointer(count: number, mailboxHandle?: string): string {
+export function formatMessagePointer(
+  count: number,
+  mailboxHandle?: string,
+  cliCommand: OrchestrationCliCommand = 'orca'
+): string {
   const noun = count === 1 ? 'message' : 'messages'
   const runFlag = mailboxHandle?.startsWith('run:')
     ? ` --run ${mailboxHandle.slice('run:'.length)}`
     : ''
-  return `\nYou have ${count} orchestration ${noun}. Run \`veer orchestration check${runFlag}\`.\n`
+  return `\nYou have ${count} orchestration ${noun}. Run \`${cliCommand} orchestration check${runFlag}\`.\n`
 }

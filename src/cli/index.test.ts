@@ -135,6 +135,83 @@ describe('command aliases dispatch to the canonical handler', () => {
     }
   })
 
+  // #19334: a failed archive hook blocks removal, so the CLI must exit non-zero rather than
+  // report a delete that did not happen — and the waiver must ride its own flag, never --force.
+  it('exits non-zero when worktree removal is refused by a failed archive hook', async () => {
+    queueFixtures(callMock, okFixture('req_show', { worktree: { hostId: 'local' } }))
+    callMock.mockRejectedValueOnce(
+      Object.assign(new Error('Archive hook failed for worktree: /tmp/wt — exited 23.'), {
+        code: 'worktree_archive_hook_failed'
+      })
+    )
+    const priorExitCode = process.exitCode
+
+    try {
+      await main(
+        ['worktree', 'rm', '--worktree', 'id:wt-1', '--force', '--run-hooks', '--json'],
+        '/tmp/repo'
+      )
+
+      expect(process.exitCode).toBe(1)
+      expect(callMock).toHaveBeenNthCalledWith(
+        2,
+        'worktree.rm',
+        expect.objectContaining({
+          runHooks: true,
+          allowFailedArchiveHook: false
+        })
+      )
+    } finally {
+      process.exitCode = priorExitCode
+    }
+  })
+
+  // #19334 S4: the waiver only applies to a hook that ran, so alone it silently does nothing.
+  it('rejects the archive-hook waiver without --run-hooks instead of ignoring it', async () => {
+    queueFixtures(callMock, okFixture('req_show', { worktree: { hostId: 'local' } }))
+    const priorExitCode = process.exitCode
+
+    try {
+      await main(
+        ['worktree', 'rm', '--worktree', 'id:wt-1', '--allow-failed-archive-hook', '--json'],
+        '/tmp/repo'
+      )
+
+      expect(process.exitCode).toBe(1)
+      // The removal must never have been attempted.
+      expect(callMock).not.toHaveBeenCalledWith('worktree.rm', expect.anything())
+    } finally {
+      process.exitCode = priorExitCode
+    }
+  })
+
+  it('forwards the explicit archive-hook waiver on worktree rm', async () => {
+    queueFixtures(
+      callMock,
+      okFixture('req_show', { worktree: { hostId: 'local' } }),
+      okFixture('req', { removed: true })
+    )
+
+    await main(
+      [
+        'worktree',
+        'rm',
+        '--worktree',
+        'id:wt-1',
+        '--run-hooks',
+        '--allow-failed-archive-hook',
+        '--json'
+      ],
+      '/tmp/repo'
+    )
+
+    expect(callMock).toHaveBeenNthCalledWith(
+      2,
+      'worktree.rm',
+      expect.objectContaining({ runHooks: true, allowFailedArchiveHook: true })
+    )
+  })
+
   it('still runs `terminal focus` after the handler de-duplication', async () => {
     queueFixtures(callMock, okFixture('req', { focus: { ok: true } }))
 
@@ -216,7 +293,7 @@ describe('unknown command surfaces a suggestion', () => {
     expect(process.exitCode).toBe(1)
     const stderr = errorSpy.mock.calls.map((call) => String(call[0])).join('\n')
     expect(stderr).toContain('Unknown command: worktree remov')
-    expect(stderr).toContain('veer worktree')
+    expect(stderr).toContain('orca worktree')
   })
 
   it('reports a mistyped pre-command flag without swallowing the command', async () => {
@@ -226,6 +303,29 @@ describe('unknown command surfaces a suggestion', () => {
     const stderr = errorSpy.mock.calls.map((call) => String(call[0])).join('\n')
     expect(stderr).toContain('Unknown flag --jso for command: worktree list')
     expect(stderr).toContain('--json')
+  })
+
+  it('names the offending --worktree value and the valid forms on selector_not_found', async () => {
+    const { RuntimeRpcFailureError } = await import('./runtime/types.js')
+    callMock.mockRejectedValue(
+      new RuntimeRpcFailureError({
+        id: 'req_selector',
+        ok: false,
+        error: { code: 'selector_not_found', message: 'selector_not_found' },
+        _meta: { runtimeId: 'runtime_local' }
+      })
+    )
+
+    await main(
+      ['orchestration', 'worker-start', '--task', 't1', '--worktree', 'repo-1', '--agent', 'codex'],
+      '/tmp/repo'
+    )
+
+    expect(process.exitCode).toBe(1)
+    const stderr = errorSpy.mock.calls.map((call) => String(call[0])).join('\n')
+    expect(stderr).toContain('No Orca workspace matched the worktree selector "repo-1"')
+    expect(stderr).toContain('id:repo-1::<absolute-path>')
+    expect(stderr).toContain('Valid selector forms:')
   })
 
   it('reports a pre-command flag that belongs to another command', async () => {
@@ -275,13 +375,45 @@ describe('unknown help command surfaces a suggestion', () => {
     await main(argv, '/tmp/repo')
 
     expect(process.exitCode).toBe(1)
-    expect(logSpy.mock.calls.flat().join('\n')).toContain('Did you mean: veer worktree')
+    expect(logSpy.mock.calls.flat().join('\n')).toContain('Did you mean: orca worktree')
     logSpy.mockRestore()
     process.exitCode = 0
   })
 })
 
-describe('veer root help', () => {
+describe('nested command group help', () => {
+  it.each([
+    ['browser', ['browser'], ['identity get', 'identity set']],
+    ['browser identity', ['browser', 'identity'], ['get', 'set']]
+  ])(
+    'prints successful help for %s without constructing a runtime client',
+    async (_, path, commands) => {
+      const previousExitCode = process.exitCode
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      runtimeClientConstructorMock.mockClear()
+      process.exitCode = 0
+
+      try {
+        await main([...path, '--help'], '/tmp/repo')
+
+        expect(process.exitCode).toBe(0)
+        const output = logSpy.mock.calls.flat().join('\n')
+        expect(output).toContain(`orca ${path.join(' ')}`)
+        for (const command of commands) {
+          expect(output).toContain(command)
+        }
+        expect(output).not.toContain('Unknown command')
+        expect(runtimeClientConstructorMock).not.toHaveBeenCalled()
+        expect(callMock).not.toHaveBeenCalled()
+      } finally {
+        process.exitCode = previousExitCode
+        logSpy.mockRestore()
+      }
+    }
+  )
+})
+
+describe('orca root help', () => {
   it('advertises machine-readable agent discovery', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
@@ -297,11 +429,28 @@ describe('veer root help', () => {
     await main([], '/tmp/repo')
 
     expect(logSpy.mock.calls.flat().join('\n')).toContain(
-      'account add               Add a managed Claude or Codex account on this Veer host'
+      'account add               Add a managed Claude or Codex account on this Orca host'
     )
     expect(logSpy.mock.calls.flat().join('\n')).toContain(
-      'account list              List managed Claude and Codex accounts on this Veer host'
+      'account list              List managed Claude and Codex accounts on this Orca host'
     )
+    logSpy.mockRestore()
+  })
+
+  it('labels retired coordinator scheduler commands at the root', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(['--help'], '/tmp/repo')
+
+    const output = String(logSpy.mock.calls[0]?.[0])
+    expect(output).toContain(
+      'orchestration coordinator-start Retired: load the current orchestration skill'
+    )
+    expect(output).toContain(
+      'orchestration coordinator-stop Retired: load the current orchestration skill'
+    )
+    expect(output).not.toContain('Start the legacy automatic coordinator loop')
+    expect(output).not.toContain('Stop the legacy automatic coordinator loop')
     logSpy.mockRestore()
   })
 
@@ -336,10 +485,10 @@ describe('veer root help', () => {
       '`worktree create --agent` creates a new checkout with an agent.'
     )
     expect(logSpy.mock.calls[0][0]).toContain(
-      'veer terminal create --worktree active --command "codex"'
+      'orca terminal create --worktree active --command "codex"'
     )
     expect(logSpy.mock.calls[0][0]).toContain(
-      'orchestration worker-start Start a supervised worker locally or on a connected Veer server'
+      'orchestration worker-start Start a supervised worker locally or on a connected Orca server'
     )
     expect(logSpy.mock.calls[0][0]).toContain(
       'orchestration ask         Ask the coordinator a blocking question'
@@ -356,6 +505,7 @@ describe('veer root help', () => {
     expect(logSpy.mock.calls[0][0]).toContain(
       'orchestration worker-list Report worker terminal resource accounting'
     )
+    expect(logSpy.mock.calls[0][0]).not.toContain('orchestration worker-cleanup')
     expect(callMock).not.toHaveBeenCalled()
   })
 
@@ -366,7 +516,7 @@ describe('veer root help', () => {
 
     const rootHelp = String(logSpy.mock.calls[0][0])
     expect(rootHelp).toContain('Linear:')
-    expect(rootHelp).toContain('linear                    Read Linear ticket context for agents')
+    expect(rootHelp).toContain('linear                    Read and write Linear issues for agents')
     expect(rootHelp).not.toContain('linear issue')
     expect(rootHelp).not.toContain('linear search')
 
@@ -374,7 +524,7 @@ describe('veer root help', () => {
     await main(['linear', '--help'], '/tmp/repo')
 
     const groupHelp = String(logSpy.mock.calls[0][0])
-    expect(groupHelp).toContain('veer linear')
+    expect(groupHelp).toContain('orca linear')
     expect(groupHelp).toContain('issue')
     expect(groupHelp).toContain('search')
     expect(groupHelp).not.toContain('--comments')
@@ -384,7 +534,7 @@ describe('veer root help', () => {
     await main(['linear', 'issue', '--help'], '/tmp/repo')
 
     const issueHelp = String(logSpy.mock.calls[0][0])
-    expect(issueHelp).toContain('veer linear issue [<id>]')
+    expect(issueHelp).toContain('orca linear issue [<id>]')
     expect(issueHelp).toContain('--comments             Include threaded Linear comments')
     expect(issueHelp).toContain('--attachments          Include attachment metadata and URLs')
     expect(issueHelp).toContain('--activity             Include issue field-change history')
@@ -395,7 +545,7 @@ describe('veer root help', () => {
     await main(['linear', 'search', '--help'], '/tmp/repo')
 
     const searchHelp = String(logSpy.mock.calls[0][0])
-    expect(searchHelp).toContain('veer linear search <query>')
+    expect(searchHelp).toContain('orca linear search <query>')
     expect(searchHelp).toContain('--workspace <id|all>  Connected Linear workspace id, or all')
     expect(searchHelp).toContain('--query <text>        Text to search across Linear issues')
 
@@ -438,6 +588,21 @@ describe('veer root help', () => {
     expect(help).toContain(
       '--cursor <cursor>      Opaque cursor returned by a previous worker-read page'
     )
+    expect(help).not.toContain('Line cursor from a previous read')
+    expect(callMock).not.toHaveBeenCalled()
+  })
+
+  it('describes worker-list cursors as opaque page cursors', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    logSpy.mockClear()
+
+    await main(['orchestration', 'worker-list', '--help'], '/tmp/repo')
+
+    const help = String(logSpy.mock.calls[0][0])
+    expect(help).toContain('[--cursor <cursor>]')
+    expect(help).toContain('--cursor <cursor>      Opaque page cursor copied from page.nextCursor')
+    expect(help).toContain('Continue with the opaque page.nextCursor value unchanged.')
+    expect(help).not.toContain('--cursor <dispatch_id>')
     expect(help).not.toContain('Line cursor from a previous read')
     expect(callMock).not.toHaveBeenCalled()
   })
@@ -491,13 +656,13 @@ describe('veer root help', () => {
     expect(createHelp).not.toContain('checkout/workspace')
     expect(createHelp).not.toContain('caller workspace')
     expect(createHelp).not.toContain('current workspace')
-    expect(createHelp).not.toContain('active Veer workspace')
+    expect(createHelp).not.toContain('active Orca workspace')
     expect(createHelp).not.toContain('folderWorkspaceId')
     expect(createHelp).toContain('folder:<id>')
     expect(createHelp).toContain('folder:<folderId>')
     expect(createHelp).toContain('worktree:<worktreeId>')
     expect(createHelp).toContain(
-      '--no-parent only affects Veer lineage; omit --base-branch to use the repo default base'
+      '--no-parent only affects Orca lineage; omit --base-branch to use the repo default base'
     )
 
     logSpy.mockClear()
@@ -519,7 +684,7 @@ describe('veer root help', () => {
 
     expect(String(logSpy.mock.calls[0][0])).toContain('This creates a new checkout.')
     expect(String(logSpy.mock.calls[0][0])).toContain(
-      'veer terminal create --worktree active --command "codex"'
+      'orca terminal create --worktree active --command "codex"'
     )
 
     logSpy.mockClear()
@@ -528,7 +693,7 @@ describe('veer root help', () => {
     const terminalHelp = String(logSpy.mock.calls[0][0])
     expect(terminalHelp).toContain('Use this, not worktree create')
     expect(terminalHelp).toContain(
-      'veer terminal create --worktree active --command "codex" --json'
+      'orca terminal create --worktree active --command "codex" --json'
     )
     expect(callMock).not.toHaveBeenCalled()
   })

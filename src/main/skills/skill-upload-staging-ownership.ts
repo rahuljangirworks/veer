@@ -16,6 +16,7 @@ export type SkillUploadStagingOwnershipOptions = {
 export class SkillUploadStagingOwnership {
   readonly directory: string
   private readonly processIsAlive: (pid: number) => boolean
+  private removal: Promise<void> | null = null
 
   constructor(
     private readonly root: string,
@@ -35,12 +36,18 @@ export class SkillUploadStagingOwnership {
     await mkdir(this.directory, { recursive: true, mode: 0o700 })
   }
 
+  // Callers race this (an in-flight operation and disposal), and a second rmdir of a
+  // delete-pending directory fails with EPERM on Windows, so join one removal instead.
   async remove(): Promise<void> {
-    // Why maxRetries: on Windows, rmdir can race a just-closed file handle
-    // still being released by the OS (antivirus scan, delayed unlock),
-    // throwing EPERM even though the handle was already closed. `fs.rm`
-    // only backs off and retries EPERM/EBUSY when maxRetries is set.
-    await rm(this.directory, { recursive: true, force: true, maxRetries: 3 })
+    const removal = (this.removal ??= rm(this.directory, { recursive: true, force: true }))
+    try {
+      await removal
+    } catch (error) {
+      if (this.removal === removal) {
+        this.removal = null
+      }
+      throw error
+    }
   }
 
   private async cleanupAbandonedOwners(): Promise<void> {
@@ -59,7 +66,7 @@ export class SkillUploadStagingOwnership {
         const candidate = join(this.root, entry.name)
         const stats = await lstat(candidate).catch(() => null)
         if (stats?.isDirectory() && !stats.isSymbolicLink()) {
-          await rm(candidate, { recursive: true, force: true, maxRetries: 3 })
+          await rm(candidate, { recursive: true, force: true })
         }
       }
     } finally {
