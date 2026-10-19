@@ -17,7 +17,9 @@ import {
 import { projectPluginAgentStatusChangedPayload } from '../plugins/plugin-agent-status-event'
 import { setMainPluginLanguagePacks, setMainUiLanguage } from '../i18n/main-i18n'
 import { rebuildAppMenu } from '../menu/register-app-menu'
+import { rebuildSystemTrayMenu } from '../tray/system-tray'
 import { logStartupMilestone } from './startup-diagnostics'
+import { isFirstPartyStartupAllowed } from '../veer/first-party-startup-gate'
 import { agentHookServer } from '../agent-hooks/server'
 import { emitPluginWorktreeLifecycle } from './main-process-pty-startup'
 import { mainProcessState as state } from './main-process-state'
@@ -39,7 +41,10 @@ export async function initializeMainProcessPlugins(runtime: OrcaRuntimeService):
     getKillListEntry: (pluginKey) => state.pluginKillListService?.find(pluginKey) ?? null
   })
   const requestOfficialMarketplaceSeed = (): void => {
-    if (store.getSettings().pluginSystemEnabled !== true) {
+    if (
+      !isFirstPartyStartupAllowed('marketplace') ||
+      store.getSettings().pluginSystemEnabled !== true
+    ) {
       return
     }
     void state.pluginMarketplaceService
@@ -101,7 +106,11 @@ export async function initializeMainProcessPlugins(runtime: OrcaRuntimeService):
       requestBundledPluginBootstrap()
       requestOfficialMarketplaceSeed()
     }
-    if (app.isPackaged && updates.pluginSystemEnabled === true) {
+    if (
+      isFirstPartyStartupAllowed('kill-list') &&
+      app.isPackaged &&
+      updates.pluginSystemEnabled === true
+    ) {
       void state.pluginKillListService
         ?.refresh()
         .catch((error) =>
@@ -129,7 +138,11 @@ export async function initializeMainProcessPlugins(runtime: OrcaRuntimeService):
       })
     })
     .catch((error) => console.warn('[plugins] failed to initialize plugin service:', error))
-  if (app.isPackaged && store.getSettings().pluginSystemEnabled === true) {
+  if (
+    isFirstPartyStartupAllowed('kill-list') &&
+    app.isPackaged &&
+    store.getSettings().pluginSystemEnabled === true
+  ) {
     void state.pluginKillListService
       .refresh()
       .catch((error) =>
@@ -141,7 +154,10 @@ export async function initializeMainProcessPlugins(runtime: OrcaRuntimeService):
       event.contentPacksChanged &&
       setMainPluginLanguagePacks(state.pluginService?.contentPacks.languagePacks.list() ?? [])
     ) {
-      void setMainUiLanguage(store.getSettings().uiLanguage).then(() => rebuildAppMenu())
+      void setMainUiLanguage(store.getSettings().uiLanguage).then(() => {
+        rebuildAppMenu()
+        rebuildSystemTrayMenu()
+      })
     }
     for (const window of BrowserWindow.getAllWindows()) {
       if (!window.isDestroyed()) {

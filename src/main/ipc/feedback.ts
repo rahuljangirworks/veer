@@ -1,71 +1,38 @@
 import os from 'node:os'
 import { app, ipcMain } from 'electron'
+import { readFeedbackImagesDelivered, validateFeedbackImages } from './feedback-image-attachments'
 import { validateFeedbackSubmission } from '../../shared/personal-fork-validation'
+import type {
+  FeedbackImageAttachment,
+  FeedbackRequestFailure,
+  FeedbackSubmitArgs,
+  FeedbackSubmitResult
+} from '../../shared/feedback-submit-contract'
 import {
-  readFeedbackImagesDelivered,
-  validateFeedbackImages,
-  type FeedbackImageAttachment
-} from './feedback-image-attachments'
+  errorFailure,
+  FEEDBACK_API_URL,
+  messageFromError,
+  postFeedback,
+  responseFailure,
+  type FeedbackDiagnosticBundleAttachment,
+  type FeedbackSubmissionType,
+  type FeedbackSubmitBody
+} from './feedback-request'
 
-export type { FeedbackImageAttachment } from './feedback-image-attachments'
+export type {
+  FeedbackDiagnosticBundleAttachment,
+  FeedbackImageAttachment,
+  FeedbackRequestFailure,
+  FeedbackSubmissionType,
+  FeedbackSubmitArgs,
+  FeedbackSubmitResult
+}
 
-// Why: the production Mac build loads the renderer from a file:// origin, so a
-// cross-origin POST from fetch() triggers a CORS preflight that the feedback
-// endpoint rejects. Electron's net module runs in the main process and is not
-// subject to CORS, so we proxy the submission through IPC. This mirrors the
-// same pattern used by updater-changelog.ts and updater-nudge.ts.
-const FEEDBACK_API_URL = 'https://www.onorca.dev/v1/feedback'
-const FEEDBACK_REQUEST_TIMEOUT_MS = 10_000
 const FEEDBACK_ATTACHMENT_REQUEST_TIMEOUT_MS = 60_000
-// Why: corporate filters can reject multipart with 403 while allowing the
-// small JSON report, so content-shaped failures should shed the attachment.
-const DIAGNOSTIC_BUNDLE_JSON_RETRY_STATUSES = new Set([400, 403, 408, 413, 415, 422])
-
-export type FeedbackSubmissionType = 'feedback' | 'crash'
-
-export type FeedbackSubmitArgs = {
-  feedback: string
-  submitAnonymously?: boolean
-  githubLogin: string | null
-  githubEmail: string | null
-  images?: FeedbackImageAttachment[]
-}
-
-export type FeedbackDiagnosticBundleAttachment = {
-  bundleSubmissionId: string
-  content: string
-  bytes: number
-  spanCount: number
-}
-
-type FeedbackSubmitBody = {
-  feedback: string
-  submissionType: FeedbackSubmissionType
-  githubLogin: string | null
-  githubEmail: string | null
-  appVersion: string
-  platform: NodeJS.Platform
-  osRelease: string
-  arch: string
-  diagnosticBundle?: FeedbackDiagnosticBundleAttachment
-  images?: FeedbackImageAttachment[]
-}
-
-export type FeedbackRequestFailure = {
-  status: number | null
-  error: string
-}
-
-export type FeedbackSubmitResult =
-  | {
-      ok: true
-      diagnosticBundleFailure?: FeedbackRequestFailure
-      /** Absent when nothing was attached; false when the text landed but the images did not. */
-      imagesDelivered?: boolean
-    }
-  | ({ ok: false } & FeedbackRequestFailure & {
-        diagnosticBundleFailure?: FeedbackRequestFailure
-      })
+// Why: corporate filters can reject multipart with 403 and the host caps bodies
+// near 4.5 MB (413) while allowing the small JSON report, so content-shaped
+// failures should shed the attachment.
+const ATTACHMENT_JSON_RETRY_STATUSES = new Set([400, 403, 408, 413, 415, 422])
 
 type InternalFeedbackSubmitArgs = FeedbackSubmitArgs & {
   submissionType?: FeedbackSubmissionType
@@ -102,33 +69,6 @@ function buildSubmitBody(args: InternalFeedbackSubmitArgs): FeedbackSubmitBody {
   }
 }
 
-async function postFeedback(
-  _url: string,
-  _body: FeedbackSubmitBody,
-  _timeoutMs = FEEDBACK_REQUEST_TIMEOUT_MS,
-  readResponse?: (response: Response) => Promise<void>
-): Promise<Response> {
-  const mockResponse = { ok: true, status: 200 } as unknown as Response
-  if (readResponse) {
-    await readResponse(mockResponse)
-  }
-  return mockResponse
-}
-
-
-
-function messageFromError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
-
-function responseFailure(response: Response): FeedbackRequestFailure {
-  return { status: response.status, error: `status ${response.status}` }
-}
-
-function errorFailure(error: unknown): FeedbackRequestFailure {
-  return { status: null, error: messageFromError(error) }
-}
-
 async function retryFeedbackOnPrimary(
   body: FeedbackSubmitBody,
   primaryError?: unknown
@@ -163,21 +103,66 @@ async function retryFeedbackOnPrimary(
 }
 
 function shouldRetryWithoutDiagnosticBundle(status: number): boolean {
-  return DIAGNOSTIC_BUNDLE_JSON_RETRY_STATUSES.has(status) || status === 404 || status >= 500
+  return ATTACHMENT_JSON_RETRY_STATUSES.has(status) || status === 404 || status >= 500
+}
+
+/** Posts the attachment-free report; resolves to the failure, or null once it lands. */
+async function postFeedbackWithoutAttachment(
+  body: FeedbackSubmitBody
+): Promise<FeedbackRequestFailure | null> {
+  try {
+    const response = await postFeedback(FEEDBACK_API_URL, body)
+    return response.ok ? null : responseFailure(response)
+  } catch (error) {
+    return errorFailure(error)
+  }
 }
 
 async function submitFeedbackWithoutDiagnosticBundle(
   body: FeedbackSubmitBody,
   diagnosticBundleFailure: FeedbackRequestFailure
 ): Promise<FeedbackSubmitResult> {
+  const failure = await postFeedbackWithoutAttachment(body)
+  return failure
+    ? { ok: false, ...failure, diagnosticBundleFailure }
+    : { ok: true, diagnosticBundleFailure }
+}
+
+async function submitFeedbackWithImages(
+  body: FeedbackSubmitBody,
+  bodyWithoutImages: FeedbackSubmitBody
+): Promise<FeedbackSubmitResult> {
   try {
-    const response = await postFeedback(FEEDBACK_API_URL, body)
+    let imagesDelivered = true
+    const response = await postFeedback(
+      FEEDBACK_API_URL,
+      body,
+      FEEDBACK_ATTACHMENT_REQUEST_TIMEOUT_MS,
+      async (nextResponse) => {
+        imagesDelivered = nextResponse.ok ? await readFeedbackImagesDelivered(nextResponse) : true
+      }
+    )
     if (response.ok) {
-      return { ok: true, diagnosticBundleFailure }
+      return { ok: true, imagesDelivered }
     }
-    return { ok: false, ...responseFailure(response), diagnosticBundleFailure }
+    const imagesFailure = responseFailure(response)
+    if (ATTACHMENT_JSON_RETRY_STATUSES.has(response.status)) {
+      const failure = await postFeedbackWithoutAttachment(bodyWithoutImages)
+      return failure
+        ? {
+            ok: false,
+            status: failure.status,
+            error: `${imagesFailure.error}; retry: ${failure.error}`
+          }
+        : { ok: true, imagesDelivered: false, imagesFailure }
+    }
+    // Why: the text lane retries 5xx, this one does not. Replaying the
+    // attachments on a flaky link costs more than it saves, and the dialog
+    // stays open with its thumbnails while the draft text sits in the app
+    // store, so a manual resend loses nothing.
+    return { ok: false, ...imagesFailure }
   } catch (error) {
-    return { ok: false, ...errorFailure(error), diagnosticBundleFailure }
+    return { ok: false, ...errorFailure(error) }
   }
 }
 
@@ -221,26 +206,7 @@ export async function submitFeedback(
   }
   const body = buildSubmitBody(args)
   if (body.images?.length) {
-    try {
-      let imagesDelivered = true
-      const response = await postFeedback(
-        FEEDBACK_API_URL,
-        body,
-        FEEDBACK_ATTACHMENT_REQUEST_TIMEOUT_MS,
-        async (nextResponse) => {
-          imagesDelivered = nextResponse.ok ? await readFeedbackImagesDelivered(nextResponse) : true
-        }
-      )
-      if (response.ok) {
-        return { ok: true, imagesDelivered }
-      }
-      // Why: the text lane retries 5xx, this one does not. Replaying up to
-      // 32 MiB of attachments on a flaky link costs more than it saves, and the
-      // dialog keeps the draft and thumbnails so the user can resend.
-      return { ok: false, ...responseFailure(response) }
-    } catch (error) {
-      return { ok: false, ...errorFailure(error) }
-    }
+    return submitFeedbackWithImages(body, buildSubmitBody({ ...args, images: undefined }))
   }
   if (body.diagnosticBundle) {
     const bodyWithoutDiagnosticBundle =

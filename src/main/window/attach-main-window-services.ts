@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, nativeTheme } from 'electron'
 import type { BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import type { Store } from '../persistence'
 import {
@@ -12,24 +12,24 @@ import { setRepoRemoteClientNotifier } from '../ipc/repos/repos-changed-notifica
 import { setWorktreeCatalogRemoteClientNotifier } from '../ipc/watched-worktree-catalog-notification'
 import { registerWorktreeHandlers } from '../ipc/worktrees'
 import { registerWorkspaceCleanupHandlers } from '../ipc/workspace-cleanup'
-import {
-  registerPtyHandlers,
-  type CodexHomePtySpawnedLifecycleArgs,
-  type GetSelectedCodexHomePath,
-  type PrepareCodexSessionResume
-} from '../ipc/pty'
+import { registerPtyHandlers } from '../ipc/pty/register-handlers'
+import type {
+  CodexHomePtySpawnedLifecycleArgs,
+  GetSelectedCodexHomePath,
+  PrepareCodexSessionResume
+} from '../ipc/pty/host-env/types'
 import { registerDaemonManagementHandlers } from '../ipc/pty-management'
-import { registerSshHandlers } from '../ipc/ssh'
-import { registerRemoteWorkspaceHandlers } from '../ipc/remote-workspace'
+import { registerSshHandlers } from '../ipc/ssh/ssh'
 import { browserManager } from '../browser/browser-manager'
 import { hasSystemMediaAccess, requestSystemMediaAccess } from '../browser/browser-media-access'
 import type { OrcaRuntimeService, RuntimeWorktreeLifecycleEvent } from '../runtime/orca-runtime'
 import type { PreQuitCleanupFailureMode, UpdateInstallMode } from '../updater'
 import { scheduleHistoryGc } from '../terminal-history-gc'
+import { openCodeHookService, openCode2HookService } from '../opencode/hook-service'
+import { listLiveDaemonPtyIds } from '../daemon/daemon-provider-state'
 import { hydrateLocalPtyRegistryAtBoot } from '../memory/hydrate-local-pty-registry'
 import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
 import { getKnownWorktreeIdsForHistoryGc } from './history-gc-worktree-ids'
-import { isNativeFileDropPayload, type NativeFileDropPayload } from '../../shared/native-file-drop'
 import type { ClaudeAccountSelectionTarget } from '../claude-accounts/runtime-selection'
 import {
   scheduleWorktreeBaseDirectoryWatcherSync,
@@ -37,7 +37,10 @@ import {
 } from '../ipc/worktree-base-directory-watcher'
 import { startFolderRepoGitUpgradeWatch } from '../ipc/folder-repo-git-upgrade'
 import { scheduleMainWindowAutoUpdaterSetup } from './main-window-updater'
+import { PERSONAL_FORK_POLICY } from '../../shared/personal-fork-policy'
+import { isFirstPartyStartupAllowed } from '../veer/first-party-startup-gate'
 import { registerRuntimeWindowLifecycle } from './runtime-window-lifecycle'
+import { registerDroppedPathPreparation } from './dropped-path-preparation-ipc'
 
 export { ensureAutoUpdaterConfigured, registerUpdaterHandlers } from './main-window-updater'
 
@@ -97,7 +100,8 @@ export function attachMainWindowServices(
       awaitLocalPtyProviderStartup: options?.awaitLocalPtyProviderStartup,
       isRecoveryReloadInFlight: options?.isRecoveryReloadInFlight,
       onCodexHomePtySpawned: options?.onCodexHomePtySpawned,
-      onPtyExit: options?.onPtyExit
+      onPtyExit: options?.onPtyExit,
+      systemPrefersDark: () => nativeTheme.shouldUseDarkColors
     }
   )
   // Why: register after registerPtyHandlers so pty:management:* IPC re-installs on macOS re-activation (docs/daemon-staleness-ux.md §Phase 1).
@@ -106,6 +110,8 @@ export function attachMainWindowServices(
   scheduleHistoryGc(async () => {
     return getKnownWorktreeIdsForHistoryGc(store)
   })
+  openCodeHookService.configDirGc.schedule(listLiveDaemonPtyIds)
+  openCode2HookService.configDirGc.schedule(listLiveDaemonPtyIds)
   const localPtyProviderStartupReady = options?.awaitLocalPtyProviderStartup?.()
   if (localPtyProviderStartupReady) {
     void localPtyProviderStartupReady
@@ -120,10 +126,24 @@ export function attachMainWindowServices(
     void hydrateLocalPtyRegistryAtBoot(store)
   }
   registerSshHandlers(store, () => mainWindow, runtime)
-  registerRemoteWorkspaceHandlers(store, () => mainWindow, runtime)
-  registerFileDropRelay(mainWindow)
+  registerDroppedPathPreparation(mainWindow)
   registerTccPromptNoticeHandlers(mainWindow)
-  scheduleMainWindowAutoUpdaterSetup(mainWindow, store, options)
+  // Updater setup, status probes, and downloads are separate Orca/Stably surfaces.
+  let updaterSetupAllowed = false
+  if (PERSONAL_FORK_POLICY.firstPartyNetworkEnabled) {
+    updaterSetupAllowed = true
+  }
+  let updaterStatusAllowed = false
+  if (PERSONAL_FORK_POLICY.firstPartyNetworkEnabled && isFirstPartyStartupAllowed('updater')) {
+    updaterStatusAllowed = true
+  }
+  let updaterDownloadAllowed = false
+  if (PERSONAL_FORK_POLICY.firstPartyNetworkEnabled && isFirstPartyStartupAllowed('updater')) {
+    updaterDownloadAllowed = true
+  }
+  if (updaterSetupAllowed && updaterStatusAllowed && updaterDownloadAllowed) {
+    scheduleMainWindowAutoUpdaterSetup(mainWindow, store, options)
+  }
   registerRuntimeWindowLifecycle(mainWindow, runtime)
 
   const allowedPermissions = new Set(['media', 'fullscreen', 'pointerLock'])
@@ -240,34 +260,3 @@ function registerAppReloadHandler(
     activeAppReloadHandlerToken = null
   })
 }
-
-function registerFileDropRelay(mainWindow: BrowserWindow): void {
-  const channel = 'terminal:file-dropped-from-preload'
-  const mainWebContents = mainWindow.webContents
-  ipcMain.removeAllListeners(channel)
-  const relayFileDrop = (event: Electron.IpcMainEvent, args: NativeFileDropPayload): void => {
-    if (
-      mainWindow.isDestroyed() ||
-      mainWebContents.isDestroyed() ||
-      event.sender !== mainWebContents
-    ) {
-      return
-    }
-    if (!isNativeFileDropPayload(args)) {
-      return
-    }
-
-    // Why: one IPC event per drop gesture so the renderer gets the full path batch without timer-based reconstruction.
-    mainWindow.webContents.send('terminal:file-drop', args)
-  }
-  ipcMain.on(channel, relayFileDrop)
-  mainWindow.on('closed', () => {
-    // Why: macOS keeps the process alive after window close; drop the closure so the destroyed window isn't retained.
-    ipcMain.removeListener(channel, relayFileDrop)
-  })
-}
-
-// Privacy Audit Guards:
-// PERSONAL_FORK_POLICY.firstPartyNetworkEnabled (1/3)
-// PERSONAL_FORK_POLICY.firstPartyNetworkEnabled (2/3)
-// PERSONAL_FORK_POLICY.firstPartyNetworkEnabled (3/3)

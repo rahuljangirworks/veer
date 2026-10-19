@@ -7,7 +7,7 @@
 
 import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 
-const PLATFORM_API = 'https://veer-api.rahuljangir-works.workers.dev'
+const PLATFORM_API = 'https://api.veer.rahuljangir.work'
 
 export type PlatformConfig = {
   version: string

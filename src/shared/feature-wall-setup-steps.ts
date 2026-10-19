@@ -25,17 +25,17 @@ export type FeatureWallSetupSectionId = 'parallel-work' | 'setup'
 export const FEATURE_WALL_SETUP_STEPS: readonly FeatureWallSetupStep[] = [
   {
     id: 'two-worktrees',
-    name: 'Multi-task',
-    subtitle: 'Multi-task',
+    name: 'Work on two tasks at once',
+    subtitle: 'Work on two tasks at once',
     description:
       'Work in 2 different worktrees at once. Each one is isolated (even in the same project). Perfect for working on 2 features at once.'
   },
   {
     id: 'browser',
-    name: "Use Veer's browser",
-    subtitle: "Use Veer's browser",
+    name: "Use Orca's browser",
+    subtitle: "Use Orca's browser",
     description:
-      'Browse your web app without leaving Veer. Grab any element and send its exact source and styles to an agent with one click.'
+      'Browse your web app without leaving Orca. Grab any element and send its exact source and styles to an agent with one click.'
   },
   {
     id: 'notifications',
@@ -51,10 +51,10 @@ export const FEATURE_WALL_SETUP_STEPS: readonly FeatureWallSetupStep[] = [
   },
   {
     id: 'agent-capabilities',
-    name: 'Enable Veer CLI',
-    subtitle: 'Enable Veer CLI',
+    name: 'Give agents Orca skills',
+    subtitle: 'Give agents Orca skills',
     description:
-      'Register the Veer shell command and install agent skills for browser, computer, and orchestration workflows.'
+      "Install the skills agents use to drive Orca's browser, control your computer, and coordinate multi-step work."
   },
   {
     id: 'task-sources',
@@ -74,15 +74,13 @@ export const FEATURE_WALL_SETUP_STEPS: readonly FeatureWallSetupStep[] = [
     name: 'Start work in multiple repos',
     subtitle: 'Start work in multiple repos',
     description:
-      'Bring your key repos into Veer so you can start agent work without hunting for folders.'
+      'Bring your key repos into Orca so you can start agent work without hunting for folders.'
   }
 ] as const
 
 export const FEATURE_WALL_SETUP_STEP_IDS = FEATURE_WALL_SETUP_STEPS.map((step) => step.id)
 
 export function getFeatureWallSetupSteps(): readonly FeatureWallSetupStep[] {
-  // Why: Veer's CLI, skills, and provider integrations are local/bring-your-own
-  // workflows. They do not require a connection to an Orca-operated service.
   return FEATURE_WALL_SETUP_STEPS
 }
 
@@ -99,7 +97,7 @@ export function getFeatureWallSetupSectionId(
 export function getFeatureWallSetupStepsForSection(
   sectionId: FeatureWallSetupSectionId
 ): readonly FeatureWallSetupStep[] {
-  return getFeatureWallSetupSteps().filter(
+  return FEATURE_WALL_SETUP_STEPS.filter(
     (step) => getFeatureWallSetupSectionId(step.id) === sectionId
   )
 }
@@ -115,7 +113,7 @@ export function getFirstIncompleteFeatureWallSetupStepId(
   const parallelStep = getFeatureWallSetupStepsForSection('parallel-work').find(
     (step) => !stepDone[step.id]
   )
-  return parallelStep?.id ?? getFeatureWallSetupSteps()[0].id
+  return parallelStep?.id ?? FEATURE_WALL_SETUP_STEPS[0].id
 }
 
 export function isFeatureWallSetupStepId(value: unknown): value is FeatureWallSetupStepId {

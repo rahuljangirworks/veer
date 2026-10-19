@@ -4,6 +4,7 @@ import type {
   ArtifactListItem,
   ArtifactListOptions,
   ArtifactListPage,
+  ArtifactPlatformShareRequest,
   ArtifactPublishedLink,
   ArtifactPublishResult,
   ArtifactWriteRequest
@@ -49,9 +50,45 @@ export class RuntimeArtifactController {
     return this.requireService().delete(id, options)
   }
 
+  publishArtifactShare(id: string, options: ArtifactCloudOptions) {
+    return this.requireService().publishArtifact(id, options)
+  }
+
+  unpublishArtifactShare(id: string, options: ArtifactCloudOptions) {
+    return this.requireService().unpublishArtifact(id, options)
+  }
+
+  shareArtifactWith(
+    id: string,
+    request: ArtifactPlatformShareRequest,
+    options: ArtifactCloudOptions
+  ) {
+    return this.requireService().share(id, request, options)
+  }
+
+  shareArtifactLink(
+    id: string,
+    request: ArtifactPlatformShareRequest,
+    options: ArtifactCloudOptions
+  ) {
+    return this.requireService().shareArtifact(id, request, options)
+  }
+
+  revokeArtifactShare(id: string, shareId: string, options: ArtifactCloudOptions) {
+    return this.requireService().unshare(id, shareId, options)
+  }
+
+  listArtifactShares(id: string, options: ArtifactCloudOptions) {
+    return this.requireService().listShares(id, options)
+  }
+
+  listSharedWithMeArtifacts(options: ArtifactCloudOptions) {
+    return this.requireService().listSharedWithMe(options)
+  }
+
   private requireService(): ArtifactCloudService {
     if (!this.service) {
-      throw new Error('Artifact service is unavailable.')
+      throw new Error("Artifact sharing isn't available on this Orca server.")
     }
     return this.service
   }

@@ -179,8 +179,16 @@ export class ArtifactCloudService {
     return veerPlatformClient.unpublishArtifact(id, options, this.withAuth.bind(this))
   }
 
+  share(id: string, request: ArtifactPlatformShareRequest, options: ArtifactCloudOptions) {
+    return this.shareArtifact(id, request, options)
+  }
+
   shareArtifact(id: string, request: ArtifactPlatformShareRequest, options: ArtifactCloudOptions) {
     return veerPlatformClient.shareArtifact(id, request, options, this.withAuth.bind(this))
+  }
+
+  unshare(id: string, shareId: string, options: ArtifactCloudOptions) {
+    return veerPlatformClient.unshareArtifact(id, shareId, options, this.withAuth.bind(this))
   }
 
   listShares(id: string, options: ArtifactCloudOptions) {

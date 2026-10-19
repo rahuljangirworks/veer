@@ -75,6 +75,9 @@ jobs:
           path: dist/veer-windows-setup.exe
           key: branch-installer-${{ hashFiles('src/**', 'config/**', 'native/**', 'resources/win32/**', 'package.json', 'pnpm-lock.yaml') }}
 
+      - uses: ./.github/actions/prepare-windows-agent-hook
+        if: steps.cache-installer.outputs.cache-hit != 'true'
+
       - name: Build Windows installer (unsigned)
         if: steps.cache-installer.outputs.cache-hit != 'true'
         run: |

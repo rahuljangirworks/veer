@@ -11,15 +11,28 @@ The procedure for updating this file is
 ## Current baseline
 
 - Fork remote: `origin` → `git@github.com:rahuljangirworks/veer.git`
-- Upstream remote: `upstream` → `git@github.com:stablyai/orca.git` (fetch only)
-- Integration branch: `dev` → `origin/dev`
-- Last recorded upstream merge: `67e22345da`, merged by `ec591a82a4`
-- Audit date: 2026-09-07
-- Fetched upstream head at audit: `184885551527499aff6ae1aec69bcbe329bf861f`
-- Audit relationship: `HEAD...upstream/main` = `123` ahead / `390` behind
+- Upstream remote: `upstream` → `git@github.com:stablyai/orca.git` (fetch only; push URL `DISABLED`)
+- Integration branch: `dev` (do not reset or force-push `main`)
+- Merge command: `git merge upstream/main --no-ff` (never rebase)
+- Previous absorbed upstream commit: `5813cb640ed342e872dcec03aee0ee7ef7536e7f` (2026-09-28), recorded by `6a0b46a7d62e2b5ac47548ea6ae7699b3a8a1933`
+- Last recorded upstream merge: `1f555c095aa044df1438f963be8a80cc4298b95f` (2026-10-19)
+- Do not use `67e22345da` / `ec591a82a4` or the 2026-09-03 brain summary as the current baseline
 
-The fetched upstream head is not merged. Treat it as a candidate range until a
-sync is explicitly reviewed and recorded here.
+### 2026-10-19 — upstream/main @ 1f555c095aa044df1438f963be8a80cc4298b95f
+- Merge commit: recorded by the follow-up on this sync (the merge commit message is `chore: merge upstream/main @ 1f555c095a`)
+- Target branch: `dev`
+- Range: `5813cb640ed342e872dcec03aee0ee7ef7536e7f..1f555c095aa044df1438f963be8a80cc4298b95f` (3153 upstream commits). Local `dev` was 125 commits ahead of that base before the merge.
+- Backup: `backup/upstream-sync-20261019` at `6a0b46a7d62e2b5ac47548ea6ae7699b3a8a1933`
+- Conflicts: 120 paths (94 content, 23 modify/delete, 3 delete/modify). Brand-only display conflicts took upstream and restored Veer display strings. Upstream-deleted files that Veer had only rebranded were removed. The three Linux `orca` shim files upstream still ships were restored; Veer `linux-veer-*` copies remain.
+- Privacy: `TELEMETRY_ENABLED` is the literal `false`. `src/main/index.ts` arms updater, remote updater, marketplace, kill-list, star prompt, and diagnostics upload only when `PERSONAL_FORK_POLICY.firstPartyNetworkEnabled` is true, via real `if` statements. `attach-main-window-services.ts` skips updater setup unless that flag and the composition-root allow-list agree. Comment-only guards were removed. `verify-privacy-boundary.sh` no longer counts comments.
+- Policy string: `updateStrategy` is `merge-upstream-no-ff`. Nothing branched on the old `git-upstream-rebase` value except the policy test, which was updated.
+- Platform URLs: packaged Orca cloud auth no longer defaults to `login.onorca.dev` / `relay.onorca.dev`. It accepts only loopback or `https://api.veer.rahuljangir.work` via `VEER_PLATFORM_API_URL`. `fetch-config.ts` uses that API origin. Artifact sharing stays on the Veer platform client.
+- Identity: `package.json` name is `veer`. `productName` is `Veer`. App id is `com.rahuljangir.veer`. Release artifact filenames are `veer-*`. `orca-cli`, `ORCA_*`, `orca://`, and `orca-ide` stay. Skill guide ids stay `veer-*` with `orca-*` aliases; new upstream `orca-jira` is kept under that id because that is the on-disk guide name.
+- Release workflows: `release-cut.yml` and `release-mac-build.yml` run for `stablyai/orca` or `rahuljangirworks/veer`. macOS builds use `macos-15` (no Blacksmith on the fork). The Veer D1 upsert posts to `https://api.veer.rahuljangir.work/api/releases/publish` only on `rahuljangirworks/veer`.
+- Workspace default: new installs use `~/veer/workspaces`; `getLegacyDefaultWorkspaceDir` keeps the old `orca/workspaces` root.
+- Upstream changes intentionally not ported: comment-only privacy greps; implicit Orca/Stably production auth and relay URLs; rebasing `dev`.
+- Veer-specific follow-up: brain ledger `.brain/veer/_agent/rules/UPSTREAM-DELTA.md` updated to this baseline. `.agents/brain` resolves to the same file.
+- Validation: see the follow-up commit for command results.
 
 ## Intentional Veer areas to re-check on every sync
 

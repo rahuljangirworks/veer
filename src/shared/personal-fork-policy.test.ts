@@ -4,7 +4,7 @@ import { PERSONAL_FORK_POLICY, isLoopbackServiceUrl } from './personal-fork-poli
 describe('personal fork policy', () => {
   it('keeps Orca-operated network services disabled', () => {
     expect(PERSONAL_FORK_POLICY.firstPartyNetworkEnabled).toBe(false)
-    expect(PERSONAL_FORK_POLICY.updateStrategy).toBe('git-upstream-rebase')
+    expect(PERSONAL_FORK_POLICY.updateStrategy).toBe('merge-upstream-no-ff')
   })
 
   it.each(['http://localhost:4100', 'http://127.0.0.1:4100', 'http://[::1]:4100'])(

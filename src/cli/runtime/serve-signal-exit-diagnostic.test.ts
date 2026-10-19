@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { serveSignalExitError } from './serve-signal-exit-diagnostic'
+import { MacServeStartupAbortError, serveSignalExitError } from './serve-signal-exit-diagnostic'
 import {
   SERVE_CHILD_FORCE_KILL_GRACE_MS,
   SERVE_CHILD_FORCE_KILL_SCHEDULING_MARGIN_MS,
@@ -35,9 +35,7 @@ function superviseUntilExit(code: number | null, signal: NodeJS.Signals | null):
 
 function superviseChild(child: FakeChildProcess): Promise<number> {
   return superviseForegroundServe({
-    executable: '/Applications/Veer.app/Contents/MacOS/Veer',
-    childArgs: ['--serve'],
-    spawnOptions: {},
+    spec: { program: '/Applications/Veer.app/Contents/MacOS/Veer', args: ['--serve'] },
     spawnChild: vi.fn() as never,
     handoffPath: null,
     child: child as never,
@@ -52,16 +50,18 @@ afterEach(() => {
 })
 
 describe('serveSignalExitError', () => {
-  it('explains the macOS window-server abort on darwin SIGABRT', () => {
+  it('explains the Launch Services startup abort on darwin SIGABRT', () => {
     const error = serveSignalExitError('SIGABRT', 'darwin')
 
+    expect(error).toBeInstanceOf(MacServeStartupAbortError)
     expect(error).toBeInstanceOf(RuntimeClientError)
     expect(error.code).toBe('runtime_serve_failed')
     expect(error.message).toContain('aborted with SIGABRT on macOS')
-    expect(error.message).toContain('macOS window server')
+    expect(error.message).toContain('_RegisterApplication')
     expect(error.data).toMatchObject({
       nextSteps: [
-        expect.stringContaining('macOS desktop login'),
+        expect.stringContaining('desktop Veer is already running'),
+        expect.stringContaining('refuse for 30 minutes'),
         expect.stringContaining('~/Library/Logs/DiagnosticReports/Veer-*.ips')
       ]
     })
@@ -166,13 +166,11 @@ describe('superviseForegroundServe signal exits', () => {
 
   it('does not terminate an exited child when update handoff completion fails late', async () => {
     vi.useFakeTimers()
-    const missingParent = await mkdtemp(join(tmpdir(), 'orca-serve-missing-handoff-'))
+    const missingParent = await mkdtemp(join(tmpdir(), 'veer-serve-missing-handoff-'))
     await rm(missingParent, { recursive: true })
     const child = new FakeChildProcess()
     const supervised = superviseForegroundServe({
-      executable: '/Applications/Veer.app/Contents/MacOS/Veer',
-      childArgs: ['--serve'],
-      spawnOptions: {},
+      spec: { program: '/Applications/Veer.app/Contents/MacOS/Veer', args: ['--serve'] },
       spawnChild: vi.fn() as never,
       handoffPath: join(missingParent, 'handoff.json'),
       child: child as never,
@@ -187,7 +185,7 @@ describe('superviseForegroundServe signal exits', () => {
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
 
     child.emit('message', {
-      type: 'orca:serve-ready',
+      type: 'veer:serve-ready',
       version: '1.0.61',
       runtimeId: 'runtime-new'
     })

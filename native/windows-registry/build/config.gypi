@@ -504,10 +504,12 @@
       "deps/amaro/dist/index.js"
     ],
     "ossfuzz": "false",
-    "nodedir": "/home/rahul/.cache/node-gyp/24.19.0",
+    "nodedir": "/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0",
     "python": "/usr/bin/python3",
     "standalone_static_library": 1,
-    "user_agent": "pnpm/12.0.0 npm/? node/? linux x64"
+    "node_gyp": "/home/rahul/.cache/node/corepack/v1/pnpm/12.14.0/dist/node_modules/node-gyp/bin/node-gyp.js",
+    "user_agent": "pnpm/12.14.0 npm/? node/? linux x64",
+    "cache": "/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/npm"
   },
   "target_defaults": {
     "include_dirs": [],

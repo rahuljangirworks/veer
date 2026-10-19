@@ -3,6 +3,7 @@ import type {
   RemoteServerUpdaterSnapshot
 } from '../../shared/remote-server-update'
 import type { UpdateCheckOptions } from '../../shared/update-status-types'
+import { isFirstPartyStartupAllowed } from '../veer/first-party-startup-gate'
 
 type RemoteServerUpdaterAdapter = {
   getSnapshot: (runtimeId: string) => RemoteServerUpdaterSnapshot
@@ -36,6 +37,9 @@ let adapter: RemoteServerUpdaterAdapter = {
 }
 
 export function configureRemoteServerUpdater(next: RemoteServerUpdaterAdapter): void {
+  if (!isFirstPartyStartupAllowed('remote-updater')) {
+    return
+  }
   adapter = next
 }
 

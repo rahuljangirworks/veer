@@ -41,14 +41,14 @@ CFLAGS_CC_Debug := \
 	-std=gnu++20
 
 INCS_Debug := \
-	-I/home/rahul/.cache/node-gyp/24.19.0/include/node \
-	-I/home/rahul/.cache/node-gyp/24.19.0/src \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/openssl/config \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/openssl/openssl/include \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/uv/include \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/zlib \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/v8/include \
-	-I/home/rahul/projacts/veer/node_modules/.pnpm/node-addon-api@8.9.2/node_modules/node-addon-api
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/include/node \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/src \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/openssl/config \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/openssl/openssl/include \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/uv/include \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/zlib \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/v8/include \
+	-I/home/rahul/projacts/.pnpm-store/v11/links/@/node-addon-api/8.9.2/bec13617f29f9aba1e2b369e50894f6b33330d18d58cd0168386aee11280b10b/node_modules/node-addon-api
 
 DEFS_Release := \
 	'-DNODE_GYP_MODULE_NAME=orca_windows_registry' \
@@ -87,14 +87,14 @@ CFLAGS_CC_Release := \
 	-std=gnu++20
 
 INCS_Release := \
-	-I/home/rahul/.cache/node-gyp/24.19.0/include/node \
-	-I/home/rahul/.cache/node-gyp/24.19.0/src \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/openssl/config \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/openssl/openssl/include \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/uv/include \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/zlib \
-	-I/home/rahul/.cache/node-gyp/24.19.0/deps/v8/include \
-	-I/home/rahul/projacts/veer/node_modules/.pnpm/node-addon-api@8.9.2/node_modules/node-addon-api
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/include/node \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/src \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/openssl/config \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/openssl/openssl/include \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/uv/include \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/zlib \
+	-I/tmp/cursor-sandbox-cache/d118f9aaea2923b5b99df87bd1d8da06/node-gyp/24.19.0/deps/v8/include \
+	-I/home/rahul/projacts/.pnpm-store/v11/links/@/node-addon-api/8.9.2/bec13617f29f9aba1e2b369e50894f6b33330d18d58cd0168386aee11280b10b/node_modules/node-addon-api
 
 OBJS := \
 	$(obj).target/$(TARGET)/src/addon.o

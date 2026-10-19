@@ -1,37 +1,51 @@
 import type { ArtifactAuthContext } from '../../artifacts/artifact-cloud-auth-helpers'
-import type { 
-  ArtifactCloudOptions, 
-  ArtifactPlatformShareRequest
-} from '../../../shared/artifacts'
+import type { ArtifactCloudOptions, ArtifactPlatformShareRequest } from '../../../shared/artifacts'
+
+type WithArtifactAuth = (
+  options: ArtifactCloudOptions,
+  operation: (token: string, apiUrl: string, auth: ArtifactAuthContext) => Promise<unknown>
+) => Promise<unknown>
 
 export class VeerPlatformArtifactClient {
   constructor(private readonly apiUrl: string = 'https://api.veer.rahuljangir.work') {}
 
-  async publishArtifact(id: string, options: ArtifactCloudOptions, withAuth: Function) {
+  async publishArtifact(id: string, options: ArtifactCloudOptions, withAuth: WithArtifactAuth) {
     return withAuth(options, async (token: string, _: string, auth: ArtifactAuthContext) => {
       auth.assertCurrent()
       const response = await fetch(`${this.apiUrl}/v1/artifacts/${encodeURIComponent(id)}/publish`, {
         method: 'POST',
         headers: { authorization: `Bearer ${token}` }
       })
-      if (!response.ok) throw new Error('Failed to publish artifact to Veer Platform')
+      if (!response.ok) {
+        throw new Error('Failed to publish artifact to Veer Platform')
+      }
       return response.json()
     })
   }
 
-  async unpublishArtifact(id: string, options: ArtifactCloudOptions, withAuth: Function) {
+  async unpublishArtifact(id: string, options: ArtifactCloudOptions, withAuth: WithArtifactAuth) {
     return withAuth(options, async (token: string, _: string, auth: ArtifactAuthContext) => {
       auth.assertCurrent()
-      const response = await fetch(`${this.apiUrl}/v1/artifacts/${encodeURIComponent(id)}/unpublish`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${token}` }
-      })
-      if (!response.ok) throw new Error('Failed to unpublish artifact from Veer Platform')
+      const response = await fetch(
+        `${this.apiUrl}/v1/artifacts/${encodeURIComponent(id)}/unpublish`,
+        {
+          method: 'POST',
+          headers: { authorization: `Bearer ${token}` }
+        }
+      )
+      if (!response.ok) {
+        throw new Error('Failed to unpublish artifact from Veer Platform')
+      }
       return response.json()
     })
   }
 
-  async shareArtifact(id: string, request: ArtifactPlatformShareRequest, options: ArtifactCloudOptions, withAuth: Function) {
+  async shareArtifact(
+    id: string,
+    request: ArtifactPlatformShareRequest,
+    options: ArtifactCloudOptions,
+    withAuth: WithArtifactAuth
+  ) {
     return withAuth(options, async (token: string, _: string, auth: ArtifactAuthContext) => {
       auth.assertCurrent()
       const response = await fetch(`${this.apiUrl}/v1/artifacts/${encodeURIComponent(id)}/shares`, {
@@ -39,31 +53,59 @@ export class VeerPlatformArtifactClient {
         headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
         body: JSON.stringify(request)
       })
-      if (!response.ok) throw new Error('Failed to share artifact on Veer Platform')
+      if (!response.ok) {
+        throw new Error('Failed to share artifact on Veer Platform')
+      }
       return response.json()
     })
   }
 
-  async listShares(id: string, options: ArtifactCloudOptions, withAuth: Function) {
+  async listShares(id: string, options: ArtifactCloudOptions, withAuth: WithArtifactAuth) {
     return withAuth(options, async (token: string, _: string, auth: ArtifactAuthContext) => {
       auth.assertCurrent()
       const response = await fetch(`${this.apiUrl}/v1/artifacts/${encodeURIComponent(id)}/shares`, {
         method: 'GET',
         headers: { authorization: `Bearer ${token}` }
       })
-      if (!response.ok) throw new Error('Failed to list artifact shares from Veer Platform')
+      if (!response.ok) {
+        throw new Error('Failed to list artifact shares from Veer Platform')
+      }
       return response.json()
     })
   }
 
-  async listSharedWithMe(options: ArtifactCloudOptions, withAuth: Function) {
+  async unshareArtifact(
+    id: string,
+    shareId: string,
+    options: ArtifactCloudOptions,
+    withAuth: WithArtifactAuth
+  ) {
+    return withAuth(options, async (token: string, _: string, auth: ArtifactAuthContext) => {
+      auth.assertCurrent()
+      const response = await fetch(
+        `${this.apiUrl}/v1/artifacts/${encodeURIComponent(id)}/shares/${encodeURIComponent(shareId)}`,
+        {
+          method: 'DELETE',
+          headers: { authorization: `Bearer ${token}` }
+        }
+      )
+      if (!response.ok) {
+        throw new Error('Failed to revoke artifact share on Veer Platform')
+      }
+      return response.json()
+    })
+  }
+
+  async listSharedWithMe(options: ArtifactCloudOptions, withAuth: WithArtifactAuth) {
     return withAuth(options, async (token: string, _: string, auth: ArtifactAuthContext) => {
       auth.assertCurrent()
       const response = await fetch(`${this.apiUrl}/v1/shared-with-me`, {
         method: 'GET',
         headers: { authorization: `Bearer ${token}` }
       })
-      if (!response.ok) throw new Error('Failed to list shared-with-me artifacts from Veer Platform')
+      if (!response.ok) {
+        throw new Error('Failed to list shared-with-me artifacts from Veer Platform')
+      }
       return response.json()
     })
   }

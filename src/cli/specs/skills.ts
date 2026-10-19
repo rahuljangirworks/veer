@@ -40,22 +40,29 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
     notes: [
       'Reads bundled guide metadata locally without contacting the Veer runtime.',
       'With --json, prints a topics array of canonical names and one-line descriptions.',
-      'Use `veer skills get <name>` for the full guide, or `veer skills install` to install skills.'
+      'Use `veer skills get <name>` for the compact guide, `--full` for its full reference package, or `veer skills install` to install skills.'
     ]
   },
   {
     path: ['skills', 'get'],
     aliases: [['skills', 'show']],
     summary: 'Print a version-matched skill guide as Markdown',
-    usage: 'veer skills get <topic> [--full] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'topic', 'full'],
+    usage: 'veer skills get <topic> [--full | --reference <name>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'topic', 'full', 'reference', 'references'],
     positionalArgs: ['topic'],
     notes: [
       'Reads bundled guide content locally without contacting the Veer runtime.',
-      'Use --full to include bundled reference documents when the guide provides them.',
+      'Prints the compact guide by default. Use --full to print the full guide with bundled references when provided.',
+      'Use --reference <name> to print one bundled reference alone, which is what an action gate in the compact guide needs; --references lists the available names.',
+      'A reference name may be given bare (recovery-and-cleanup) or as the guide spells it (references/recovery-and-cleanup.md).',
       'Use --json for a deterministic object containing canonical topic metadata and content.'
     ],
-    examples: ['veer skills get veer-cli', 'veer skills get orchestration --full']
+    examples: [
+      'veer skills get orca-cli',
+      'veer skills get orchestration --full',
+      'veer skills get orchestration --references',
+      'veer skills get orchestration --reference recovery-and-cleanup'
+    ]
   },
   {
     path: ['skills', 'install'],
@@ -66,9 +73,10 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: [...GLOBAL_FLAGS, 'skill', 'all', 'agent', 'local', 'dry-run'],
     notes: [
       'Reads the bundled skill registry locally without contacting the Veer runtime.',
-      'Resolves to the same `npx skills add <repo> --skill <name> ...` command used by ' +
-        'Veer Settings, plus the non-interactive flags an unattended host needs ' +
-        '(`npx --yes` and `-y`), then runs it and forwards its output and exit code.',
+      'Resolves to the same `npx skills@<pinned> add <repo>/tree/<commit> --skill <name> ...` ' +
+        'command used by Veer Settings, pinned to the commit this Veer build was made from, ' +
+        'plus the non-interactive flags an unattended host needs (`npx --yes` and `-y`), ' +
+        'then runs it and forwards its output and exit code.',
       'Installs globally (all projects, adds --global) by default. Use --local to install ' +
         'into the current project instead.',
       'Targets the coding agents Veer detects on this host, plus the shared ' +
@@ -85,25 +93,27 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
     ],
     examples: [
       'veer skills install',
-      'veer skills install --skill veer-cli --skill orchestration',
-      'veer skills install --skill veer-cli --local',
-      'veer skills install --skill veer-cli --agent claude-code,codex',
+      'veer skills install --skill orca-cli --skill orchestration',
+      'veer skills install --skill orca-cli --local',
+      'veer skills install --skill orca-cli --agent claude-code,codex',
       'veer skills install --all --dry-run'
     ]
   },
   {
     path: ['skills', 'update'],
-    summary: 'Update already-installed Veer skills via the community skills CLI',
-    usage: 'veer skills update [--skill <name>]... [--all] [--local] [--dry-run] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'skill', 'all', 'local', 'dry-run'],
+    summary: 'Update Veer skills to the version this Veer build ships',
+    usage:
+      'veer skills update [--skill <name>]... [--all] [--agent <name>[,<name>]] ' +
+      '[--local] [--dry-run] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'skill', 'all', 'agent', 'local', 'dry-run'],
     notes: [
       'Reads the bundled skill registry locally without contacting the Veer runtime.',
-      'Resolves to the same `npx skills update <names...>` command used by Veer Settings, ' +
-        'plus the non-interactive flags an unattended host needs (`npx --yes` and `-y`), ' +
-        'then runs it and forwards its output and exit code.',
+      'Runs the same pinned `npx skills add` command as `veer skills install`, which ' +
+        'replaces each selected skill with the copy this Veer build ships.',
       'Updates the global install (all projects, adds --global) by default. Use --local to ' +
         'update the current project instead.',
-      'Only refreshes skills that are already installed; use `veer skills install` first.',
+      'Targets the same agents as `veer skills install`, or only the shared ' +
+        '.agents/skills directory when none is detected; use --agent to choose them yourself.',
       'Use --dry-run to print the resolved command without running it.',
       'With --json, the skill listing and --dry-run emit JSON; a real update streams ' +
         "npx's own non-JSON output live and rejects --json.",
@@ -112,8 +122,8 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
     ],
     examples: [
       'veer skills update',
-      'veer skills update --skill veer-cli --skill orchestration',
-      'veer skills update --skill veer-cli --local',
+      'veer skills update --skill orca-cli --skill orchestration',
+      'veer skills update --skill orca-cli --local',
       'veer skills update --all --dry-run'
     ]
   }

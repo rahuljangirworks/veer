@@ -43,7 +43,18 @@ vi.mock('child_process', async () => {
 
 import { main } from './index'
 import { okFixture, queueFixtures } from './test-fixtures'
+import { PROJECT_HOST_SETUP_HOST_TARGET_RUNTIME_CAPABILITY } from '../shared/runtime-capability-constants'
 import { pairRuntimeEnvironment, useWorktreeAwarenessEnvironment } from './index-test-harness'
+
+const ORCA_PROJECT = {
+  id: 'github:stablyai/orca',
+  displayName: 'Veer',
+  badgeColor: '#7c3aed',
+  sourceRepoIds: ['repo-1'],
+  createdAt: 1,
+  updatedAt: 1
+}
+const PROJECT_LIST_FIXTURE = okFixture('req_project_list', { projects: [ORCA_PROJECT] })
 
 describe('veer cli worktree awareness', () => {
   useWorktreeAwarenessEnvironment({
@@ -87,7 +98,7 @@ describe('veer cli worktree awareness', () => {
             providerIdentity: {
               provider: 'github',
               owner: 'stablyai',
-              repo: 'orca'
+              repo: 'veer'
             },
             sourceRepoIds: ['repo-1'],
             createdAt: 1,
@@ -303,6 +314,7 @@ describe('veer cli worktree awareness', () => {
     pairRuntimeEnvironment(listEnvironmentsMock, 'env-uuid-1', 'awin')
     queueFixtures(
       callMock,
+      PROJECT_LIST_FIXTURE,
       okFixture('req_project_setup_create', {
         result: {
           project: {
@@ -389,6 +401,7 @@ describe('veer cli worktree awareness', () => {
   it('sets up an existing project folder with a path resolved against the local cli cwd', async () => {
     queueFixtures(
       callMock,
+      PROJECT_LIST_FIXTURE,
       okFixture('req_project_setup', {
         result: {
           project: {
@@ -587,6 +600,7 @@ describe('veer cli worktree awareness', () => {
     pairRuntimeEnvironment(listEnvironmentsMock, 'awin')
     queueFixtures(
       callMock,
+      PROJECT_LIST_FIXTURE,
       okFixture('req_project_setup_clone', {
         result: {
           project: {
@@ -602,7 +616,7 @@ describe('veer cli worktree awareness', () => {
             projectId: 'github:stablyai/orca',
             hostId: 'local',
             repoId: 'repo-awin',
-            path: 'C:\\orca-probe\\orca',
+            path: 'C:\\veer-probe\\veer',
             displayName: 'Veer',
             setupState: 'ready',
             setupMethod: 'cloned',
@@ -611,7 +625,7 @@ describe('veer cli worktree awareness', () => {
           },
           repo: {
             id: 'repo-awin',
-            path: 'C:\\orca-probe\\orca',
+            path: 'C:\\veer-probe\\veer',
             displayName: 'Veer',
             badgeColor: '#7c3aed',
             addedAt: 1
@@ -632,7 +646,7 @@ describe('veer cli worktree awareness', () => {
         '--url',
         'https://github.com/stablyai/orca.git',
         '--destination',
-        'C:\\orca-probe',
+        'C:\\veer-probe',
         '--json'
       ],
       '/Users/nwparker/orca/workspaces/orca/IME-koko'
@@ -641,7 +655,7 @@ describe('veer cli worktree awareness', () => {
     expect(runtimeClientConstructorMock).toHaveBeenCalledWith(null, 'awin')
     expect(callMock).toHaveBeenCalledWith(
       'projectHostSetup.clone',
-      expect.objectContaining({ destination: 'C:\\orca-probe' })
+      expect.objectContaining({ destination: 'C:\\veer-probe' })
     )
   })
 
@@ -714,6 +728,7 @@ describe('veer cli worktree awareness', () => {
     pairRuntimeEnvironment(listEnvironmentsMock, 'gpu')
     queueFixtures(
       callMock,
+      PROJECT_LIST_FIXTURE,
       okFixture('req_project_setup_create', {
         result: {
           project: {
@@ -776,9 +791,15 @@ describe('veer cli worktree awareness', () => {
     })
   })
 
-  it('deletes project host setup metadata through the project-first runtime API', async () => {
+  it.each([
+    { flags: [], force: false, hostId: undefined },
+    { flags: ['--force'], force: true, hostId: undefined },
+    // Why: a project on two hosts has two setups with one id; --host names the twin.
+    { flags: ['--host', 'local'], force: false, hostId: 'local' }
+  ])('deletes project host setup metadata with $flags', async ({ flags, force, hostId }) => {
     queueFixtures(
       callMock,
+      ...(hostId ? [hostTargetStatusFixture(true)] : []),
       okFixture('req_project_setup_delete', {
         result: {
           project: {
@@ -806,10 +827,30 @@ describe('veer cli worktree awareness', () => {
     )
     vi.spyOn(console, 'log').mockImplementation(() => {})
 
-    await main(['project', 'setup-delete', '--setup', 'setup-gpu', '--json'], '/tmp/repo')
+    await main(['project', 'setup-delete', '--setup', 'setup-gpu', ...flags, '--json'], '/tmp/repo')
 
     expect(callMock).toHaveBeenCalledWith('projectHostSetup.delete', {
-      setupId: 'setup-gpu'
+      setupId: 'setup-gpu',
+      hostId,
+      force
     })
   })
+
+  it('refuses --host on a server that would ignore it and act on the first same-id twin', async () => {
+    queueFixtures(callMock, hostTargetStatusFixture(false))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await main(
+      ['project', 'setup-delete', '--setup', 'dup', '--host', 'local', '--force', '--json'],
+      '/tmp/repo'
+    )
+
+    expect(callMock).not.toHaveBeenCalledWith('projectHostSetup.delete', expect.anything())
+  })
 })
+
+function hostTargetStatusFixture(supported: boolean) {
+  return okFixture('req_status', {
+    capabilities: supported ? [PROJECT_HOST_SETUP_HOST_TARGET_RUNTIME_CAPABILITY] : []
+  })
+}
