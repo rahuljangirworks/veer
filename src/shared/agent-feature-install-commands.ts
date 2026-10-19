@@ -4,6 +4,8 @@ import { isUsableSkillsCliAgentKey } from './skills-cli-agent-keys'
 // the canonical Veer skill IDs; old Orca IDs are retained only as source-level
 // aliases for existing persisted installations and are never emitted in commands.
 export const ORCA_SKILLS_REPOSITORY_URL = 'https://github.com/rahuljangirworks/veer'
+export const SKILLS_CLI_VERSION = '1.7.2'
+export const SKILLS_CLI_ENV_OVERRIDES = { LC_ALL: 'C' } as const
 
 export const VEER_CLI_SKILL_NAME = 'veer-cli'
 export const COMPUTER_USE_SKILL_NAME = 'computer-use'
@@ -30,6 +32,8 @@ export const LINEAR_AGENT_SKILL_NAMES = [
 // pastes keeps its interactive prompts and the CLI's own agent detection. Only an
 // unattended spawn, which nothing can answer, opts in.
 export type AgentFeatureSkillCommandOptions = {
+  /** Full commit the running build was made from. Omitted for static help strings. */
+  sourceCommit?: string
   global?: boolean
   yes?: boolean
   agents?: readonly string[]
@@ -57,10 +61,13 @@ export function buildAgentFeatureSkillInstallArgs(
   }
   // Why: one flag per name remains compatible with both single-value and variadic parsers.
   const skillArgs = skillNames.flatMap((name) => ['--skill', name])
+  const source = options.sourceCommit
+    ? `${ORCA_SKILLS_REPOSITORY_URL}/tree/${options.sourceCommit}`
+    : ORCA_SKILLS_REPOSITORY_URL
   return [
-    'skills',
+    `skills@${SKILLS_CLI_VERSION}`,
     'add',
-    ORCA_SKILLS_REPOSITORY_URL,
+    source,
     ...skillArgs,
     ...(global ? ['--global'] : []),
     // Why: an explicit --agent stops `skills add` calling its own detection, whose

@@ -3,8 +3,11 @@ import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { buildLegacyAppImageCliWrapper } from './legacy-appimage-cli-wrapper'
-import { quoteShell } from './cli-install-path-format'
 import { getBundledLauncherPath } from './bundled-cli-launcher-path'
+
+function quoteShell(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`
+}
 
 // Why: marks a dispatcher this function wrote so repeat serve starts overwrite
 // our own file idempotently but never clobber a user's own ~/.local/bin/veer.

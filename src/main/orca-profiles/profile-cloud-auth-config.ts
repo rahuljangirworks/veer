@@ -65,10 +65,7 @@ export function getOrcaCloudAuthConfig(
 
   const authBaseUrl = cleanEndpointUrl(env.ORCA_CLOUD_AUTH_URL) ?? apiBaseUrl
   const relayDirectorUrl = cleanOrigin(env.ORCA_RELAY_URL, allowLoopbackHttp) ?? apiBaseUrl
-  if (
-    !isLoopbackServiceUrl(relayDirectorUrl) &&
-    !isVeerPlatformServiceUrl(relayDirectorUrl)
-  ) {
+  if (!isLoopbackServiceUrl(relayDirectorUrl) && !isVeerPlatformServiceUrl(relayDirectorUrl)) {
     return unconfigured
   }
   return {

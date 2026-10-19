@@ -1,7 +1,7 @@
 import { spawn, type SpawnOptions } from 'node:child_process'
 import { resolve } from 'node:path'
-import { spawnProcess } from '@veer/process-host'
-import type { ProcessSpec } from '@veer/process-host/process-spec'
+import { spawnProcess } from '@orca/process-host'
+import type { ProcessSpec } from '@orca/process-host/process-spec'
 import {
   SERVE_UPDATE_HANDOFF_PATH_ENV,
   getServeUpdateHandoffPath
@@ -26,7 +26,7 @@ import {
 import { RuntimeClientError } from './types'
 import { SERVE_RUNTIME_ELECTRON, SERVE_RUNTIME_ENV } from '../../shared/orcad-local-serve-selection'
 import { findBundledWebClientRoot } from '../../shared/bundled-web-client-root'
-import { resolveLocalServeRuntime, serveWithOrcad } from './serve-veerd-launch'
+import { resolveLocalServeRuntime, serveWithOrcad } from './serve-orcad-launch'
 import { serveOptionArgs, type ServeOrcaAppArgs } from '../../shared/orcad-serve-argv'
 import { waitForRecipeJson } from './serve-recipe-json'
 import {
@@ -132,7 +132,7 @@ export function serveOrcaApp(args: ServeOrcaAppArgs = {}): Promise<number> {
   // Why first: as a container or PrivatePIDs init, nothing would reap orphaned descendants.
   reexecThisServeUnderInitReaper()
   const executable = resolveForegroundOrcaExecutable()
-  // Why one value: the selector, veerd and Electron must all serve the profile the caller chose.
+  // Why one value: the selector, orcad and Electron must all serve the profile the caller chose.
   const userDataPath = resolveLaunchUserDataPath()
   if (args.supervise) {
     // Why: a successful relocation replaces this process and never resolves.
@@ -181,14 +181,14 @@ async function serveWithSelectedRuntime(
     userDataPath,
     usesMacUpdateHandoff: args.recipeJson !== true && getMacAppBundlePath(executable) !== null
   })
-  if (selection.kind === 'veerd') {
-    // Why only supervised: veerd refuses a held profile as a configuration fault (exit 78), which
+  if (selection.kind === 'orcad') {
+    // Why only supervised: orcad refuses a held profile as a configuration fault (exit 78), which
     // the brake would count; exit 3 here lets the supervisor wait for the other Veer instead.
     const refusal = args.supervise ? await refuseIfProfileServed(args, userDataPath) : null
     if (refusal !== null) {
       return refusal
     }
-    process.stderr.write(`[serve] running on veerd ${selection.version}\n`)
+    process.stderr.write(`[serve] running on orcad ${selection.version}\n`)
     return serveWithOrcad(
       selection,
       args,

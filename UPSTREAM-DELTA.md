@@ -19,7 +19,7 @@ The procedure for updating this file is
 - Do not use `67e22345da` / `ec591a82a4` or the 2026-09-03 brain summary as the current baseline
 
 ### 2026-10-19 — upstream/main @ 1f555c095aa044df1438f963be8a80cc4298b95f
-- Merge commit: recorded by the follow-up on this sync (the merge commit message is `chore: merge upstream/main @ 1f555c095a`)
+- Merge commit: `bc3f5ffca37b3fb335e238a14d31cb9a140625f6` (`chore: merge upstream/main @ 1f555c095a`), parents `6a0b46a7d62e2b5ac47548ea6ae7699b3a8a1933` and `1f555c095aa044df1438f963be8a80cc4298b95f`
 - Target branch: `dev`
 - Range: `5813cb640ed342e872dcec03aee0ee7ef7536e7f..1f555c095aa044df1438f963be8a80cc4298b95f` (3153 upstream commits). Local `dev` was 125 commits ahead of that base before the merge.
 - Backup: `backup/upstream-sync-20261019` at `6a0b46a7d62e2b5ac47548ea6ae7699b3a8a1933`
@@ -32,7 +32,7 @@ The procedure for updating this file is
 - Workspace default: new installs use `~/veer/workspaces`; `getLegacyDefaultWorkspaceDir` keeps the old `orca/workspaces` root.
 - Upstream changes intentionally not ported: comment-only privacy greps; implicit Orca/Stably production auth and relay URLs; rebasing `dev`.
 - Veer-specific follow-up: brain ledger `.brain/veer/_agent/rules/UPSTREAM-DELTA.md` updated to this baseline. `.agents/brain` resolves to the same file.
-- Validation: see the follow-up commit for command results.
+- Validation: `verify-privacy-boundary.sh` passed. `verify-branding.sh` passed. `pnpm tc` passed (16,891 + 2,991 + 31 + 14,998 files). Vitest personal-fork plus profile auth config: 5 files, 23 tests passed. `pnpm build` was not run.
 
 ## Intentional Veer areas to re-check on every sync
 

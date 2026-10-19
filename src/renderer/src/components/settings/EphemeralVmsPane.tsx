@@ -50,43 +50,43 @@ function ProxmoxSettingsPanel(): React.JSX.Element {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1">
           <Label>Host URL</Label>
-          <Input 
-            placeholder="https://192.168.1.100:8006" 
-            value={proxmoxLxcSettings.hostUrl} 
-            onChange={(e) => handleChange('hostUrl', e.target.value)} 
+          <Input
+            placeholder="https://192.168.1.100:8006"
+            value={proxmoxLxcSettings.hostUrl}
+            onChange={(e) => handleChange('hostUrl', e.target.value)}
           />
         </div>
         <div className="space-y-1">
           <Label>Node Name</Label>
-          <Input 
-            placeholder="pve" 
-            value={proxmoxLxcSettings.node} 
-            onChange={(e) => handleChange('node', e.target.value)} 
+          <Input
+            placeholder="pve"
+            value={proxmoxLxcSettings.node}
+            onChange={(e) => handleChange('node', e.target.value)}
           />
         </div>
         <div className="space-y-1">
           <Label>API Token ID</Label>
-          <Input 
-            placeholder="root@pam!agent" 
-            value={proxmoxLxcSettings.apiTokenId} 
-            onChange={(e) => handleChange('apiTokenId', e.target.value)} 
+          <Input
+            placeholder="root@pam!agent"
+            value={proxmoxLxcSettings.apiTokenId}
+            onChange={(e) => handleChange('apiTokenId', e.target.value)}
           />
         </div>
         <div className="space-y-1">
           <Label>API Token Secret</Label>
-          <Input 
+          <Input
             type="password"
-            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" 
-            value={proxmoxLxcSettings.apiTokenSecret} 
-            onChange={(e) => handleChange('apiTokenSecret', e.target.value)} 
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            value={proxmoxLxcSettings.apiTokenSecret}
+            onChange={(e) => handleChange('apiTokenSecret', e.target.value)}
           />
         </div>
         <div className="space-y-1 md:col-span-2">
           <Label>Base Template ID / Name</Label>
-          <Input 
-            placeholder="9000 (Ubuntu 22.04 Template)" 
-            value={proxmoxLxcSettings.baseTemplateId} 
-            onChange={(e) => handleChange('baseTemplateId', e.target.value)} 
+          <Input
+            placeholder="9000 (Ubuntu 22.04 Template)"
+            value={proxmoxLxcSettings.baseTemplateId}
+            onChange={(e) => handleChange('baseTemplateId', e.target.value)}
           />
         </div>
       </div>

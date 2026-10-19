@@ -12,10 +12,13 @@ export class VeerPlatformArtifactClient {
   async publishArtifact(id: string, options: ArtifactCloudOptions, withAuth: WithArtifactAuth) {
     return withAuth(options, async (token: string, _: string, auth: ArtifactAuthContext) => {
       auth.assertCurrent()
-      const response = await fetch(`${this.apiUrl}/v1/artifacts/${encodeURIComponent(id)}/publish`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${token}` }
-      })
+      const response = await fetch(
+        `${this.apiUrl}/v1/artifacts/${encodeURIComponent(id)}/publish`,
+        {
+          method: 'POST',
+          headers: { authorization: `Bearer ${token}` }
+        }
+      )
       if (!response.ok) {
         throw new Error('Failed to publish artifact to Veer Platform')
       }

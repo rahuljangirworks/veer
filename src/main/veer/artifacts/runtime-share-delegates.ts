@@ -52,7 +52,10 @@ export function installVeerArtifactShareDelegates(prototype: object): void {
   ) {
     return this.artifacts.listArtifactShares(id, options)
   }
-  host.listSharedWithMeArtifacts = function (this: ArtifactShareHost, options: ArtifactCloudOptions) {
+  host.listSharedWithMeArtifacts = function (
+    this: ArtifactShareHost,
+    options: ArtifactCloudOptions
+  ) {
     return this.artifacts.listSharedWithMeArtifacts(options)
   }
 }

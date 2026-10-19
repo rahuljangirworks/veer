@@ -5,7 +5,12 @@ const { setupAutoUpdaterMock, personalForkPolicyMock, createRuntimeMock, flushPe
   vi.hoisted(() => ({
     setupAutoUpdaterMock: vi.fn(),
     personalForkPolicyMock: { firstPartyNetworkEnabled: true },
-    createRuntimeMock: vi.fn(() => ({ attachWindow: vi.fn(), detachWindow: vi.fn(), setPtyController: vi.fn(), setNotifier: vi.fn() })),
+    createRuntimeMock: vi.fn(() => ({
+      attachWindow: vi.fn(),
+      detachWindow: vi.fn(),
+      setPtyController: vi.fn(),
+      setNotifier: vi.fn()
+    })),
     flushPendingAsyncMock: vi.fn()
   }))
 
@@ -16,11 +21,22 @@ vi.mock('electron', () => ({
     removeAllListeners: vi.fn(),
     on: vi.fn()
   },
+  nativeTheme: {
+    shouldUseDarkColors: false
+  },
   powerMonitor: {
     on: vi.fn(),
     removeListener: vi.fn(),
     off: vi.fn()
   }
+}))
+
+vi.mock('../ipc/pty/register-handlers', () => ({
+  registerPtyHandlers: vi.fn()
+}))
+
+vi.mock('../ipc/ssh/ssh', () => ({
+  registerSshHandlers: vi.fn()
 }))
 
 vi.mock('../updater', () => ({

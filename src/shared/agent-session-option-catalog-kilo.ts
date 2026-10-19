@@ -1,8 +1,5 @@
-import { hasFlag } from './agent-cli-flag-detection'
 import type { AgentSessionOptionCatalog, CatalogModel } from './agent-session-option-catalog-types'
 import { removeAgentArgOption } from './agent-session-option-agent-args'
-
-const hasModelFlag = (tokens: readonly string[]): boolean => hasFlag(tokens, ['-m', '--model'])
 
 function parseKiloModelList(stdout: string): CatalogModel[] {
   const seen = new Set<string>()
@@ -39,8 +36,7 @@ export const KILO_SESSION_OPTION_CATALOG: AgentSessionOptionCatalog = {
   ],
   modelApply: {
     launchArgs: (value) => ['-m', String(value)],
-    agentArgsOverride: hasModelFlag,
-    removeAgentArgs: (tokens) => removeAgentArgOption(tokens, ['-m', '--model']),
+    removeAgentArgs: (tokens) => removeAgentArgOption('kilo', tokens, ['-m', '--model']),
     midSession: { kind: 'command', build: (value) => `/model ${String(value)}` }
   },
   discoveredModelsAreAuthoritative: true,
