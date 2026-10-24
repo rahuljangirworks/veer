@@ -38,7 +38,7 @@ function placement(status: SkillFreshnessStatus, index = 0): SkillFreshnessInsta
     topology: 'canonical-copy',
     status,
     currentPackageDigest: 'current',
-    lockSource: 'stablyai/orca',
+    lockSource: 'rahuljangirworks/veer',
     errorCategory: null
   }
 }
@@ -77,6 +77,19 @@ describe('getSkillFreshnessDisplayStatus', () => {
   it('shows update available when the inventory authorizes an update', () => {
     expect(
       getSkillFreshnessDisplayStatus(inventory([placement('outdated')], [SKILL_NAME]), SKILL_NAME)
+    ).toBe('update-available')
+  })
+
+  it('advertises an update for a copy installed from this dev checkout', () => {
+    const source = '/home/rahul/projacts/veer'
+    expect(
+      getSkillFreshnessDisplayStatus(
+        {
+          ...inventory([{ ...placement('outdated'), lockSource: source }], [SKILL_NAME]),
+          localSourcePath: source
+        },
+        SKILL_NAME
+      )
     ).toBe('update-available')
   })
 

@@ -38,6 +38,7 @@ export async function inventorySkillFreshness(args: {
   resourceRoot?: string
   candidateLstat?: CandidateLstat
   stateHome?: string | null
+  localSourcePath?: string
 }): Promise<SkillFreshnessInventory> {
   const [manifest, lockSources] = await Promise.all([
     loadSkillBundleManifest(args.resourceRoot),
@@ -164,6 +165,7 @@ export async function inventorySkillFreshness(args: {
     installations,
     eligibleUpdateNames: eligibleSkillUpdateNames(installations),
     scanIssues,
+    ...(args.localSourcePath ? { localSourcePath: args.localSourcePath } : {}),
     scannedAt: Date.now()
   }
 }

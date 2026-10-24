@@ -19,7 +19,7 @@ function placement(
     topology: 'canonical-copy',
     status: 'outdated',
     currentPackageDigest: 'current',
-    lockSource: 'stablyai/orca',
+    lockSource: 'rahuljangirworks/veer',
     errorCategory: null,
     ...overrides
   }
@@ -27,37 +27,37 @@ function placement(
 
 describe('groupSkillFreshness', () => {
   it('marks an eligible outdated skill as update-available with one location', () => {
-    const groups = groupSkillFreshness([placement('orca-cli')], ['orca-cli'])
+    const groups = groupSkillFreshness([placement('veer-cli')], ['veer-cli'])
     expect(groups).toHaveLength(1)
     expect(groups[0]).toMatchObject({
-      name: 'orca-cli',
+      name: 'veer-cli',
       status: 'update-available',
       orcaOwned: true,
-      lockSource: 'stablyai/orca'
+      lockSource: 'rahuljangirworks/veer'
     })
     expect(groups[0]?.locations).toEqual([
       {
         id: expect.any(String),
-        path: '/home/.agents/skills/orca-cli',
+        path: '/home/.agents/skills/veer-cli',
         chip: null,
         participatesInGlobalFreshness: true
       }
     ])
   })
 
-  it('sorts Orca-owned skills first, then by name', () => {
+  it('sorts Veer-owned skills first, then by name', () => {
     const groups = groupSkillFreshness(
       [
         placement('computer-use', { lockSource: 'acme/agent-skills' }),
         placement('linear-tickets', { lockSource: null }),
         placement('orchestration'),
-        placement('orca-cli', { lockSource: 'https://github.com/StablyAI/orca.git' })
+        placement('veer-cli', { lockSource: 'https://github.com/RahulJangirWorks/Veer.git' })
       ],
-      ['computer-use', 'linear-tickets', 'orca-cli', 'orchestration']
+      ['computer-use', 'linear-tickets', 'veer-cli', 'orchestration']
     )
     expect(groups.map((group) => [group.name, group.orcaOwned])).toEqual([
-      ['orca-cli', true],
       ['orchestration', true],
+      ['veer-cli', true],
       ['computer-use', false],
       ['linear-tickets', false]
     ])
@@ -66,11 +66,30 @@ describe('groupSkillFreshness', () => {
     )
   })
 
+  it('treats only this dev checkout as a Veer-owned local install', () => {
+    const source = '/home/rahul/projacts/veer'
+    const own = groupSkillFreshness(
+      [placement('veer-cli', { lockSource: source })],
+      ['veer-cli'],
+      [],
+      source
+    )
+    expect(own[0]?.orcaOwned).toBe(true)
+
+    const elsewhere = groupSkillFreshness(
+      [placement('veer-cli', { lockSource: '/home/rahul/other/veer' })],
+      ['veer-cli'],
+      [],
+      source
+    )
+    expect(elsewhere[0]?.orcaOwned).toBe(false)
+  })
+
   it('hides skills whose every copy is current', () => {
     const groups = groupSkillFreshness(
       [
-        placement('orca-cli', { status: 'current' }),
-        placement('orca-cli', { status: 'current', topology: 'provider-alias' })
+        placement('veer-cli', { status: 'current' }),
+        placement('veer-cli', { status: 'current', topology: 'provider-alias' })
       ],
       []
     )
@@ -79,7 +98,7 @@ describe('groupSkillFreshness', () => {
 
   it('keeps a plugin-managed copy of a same-named skill out of the list', () => {
     // Why: without a list of past releases a differing plugin copy cannot be told from
-    // another vendor's skill, and Orca never writes there.
+    // another vendor's skill, and Veer never writes there.
     const groups = groupSkillFreshness(
       [placement('dataviz', { status: 'outdated', topology: 'plugin-cache' })],
       []
@@ -100,7 +119,7 @@ describe('groupSkillFreshness', () => {
         name: 'dataviz',
         status: 'cannot-update',
         orcaOwned: true,
-        lockSource: 'stablyai/orca',
+        lockSource: 'rahuljangirworks/veer',
         locations: [
           {
             id: expect.any(String),
@@ -114,7 +133,7 @@ describe('groupSkillFreshness', () => {
         name: 'linear-tickets',
         status: 'cannot-update',
         orcaOwned: true,
-        lockSource: 'stablyai/orca',
+        lockSource: 'rahuljangirworks/veer',
         locations: [
           {
             id: expect.any(String),

@@ -10,7 +10,7 @@ export const SKILLS_CLI_ENV_OVERRIDES = { LC_ALL: 'C' } as const
 export const VEER_CLI_SKILL_NAME = 'veer-cli'
 export const COMPUTER_USE_SKILL_NAME = 'computer-use'
 export const ORCHESTRATION_SKILL_NAME = 'orchestration'
-export const VEER_PER_WORKSPACE_ENV_SKILL_NAME = 'proxmox-lxc-setup'
+export const VEER_PER_WORKSPACE_ENV_SKILL_NAME = 'veer-per-workspace-env'
 export const VEER_LINEAR_SKILL_NAME = 'veer-linear'
 export const ORCA_LINEAR_LEGACY_SKILL_NAME = 'orca-linear'
 /** @deprecated Use VEER_CLI_SKILL_NAME. */
@@ -34,6 +34,8 @@ export const LINEAR_AGENT_SKILL_NAMES = [
 export type AgentFeatureSkillCommandOptions = {
   /** Full commit the running build was made from. Omitted for static help strings. */
   sourceCommit?: string
+  /** Absolute checkout root whose skill bytes match the current dev manifest. */
+  sourcePath?: string
   global?: boolean
   yes?: boolean
   agents?: readonly string[]
@@ -61,9 +63,14 @@ export function buildAgentFeatureSkillInstallArgs(
   }
   // Why: one flag per name remains compatible with both single-value and variadic parsers.
   const skillArgs = skillNames.flatMap((name) => ['--skill', name])
-  const source = options.sourceCommit
-    ? `${ORCA_SKILLS_REPOSITORY_URL}/tree/${options.sourceCommit}`
-    : ORCA_SKILLS_REPOSITORY_URL
+  if (options.sourcePath !== undefined && options.sourceCommit !== undefined) {
+    throw new Error('Choose either a local skill source or a source commit.')
+  }
+  const source =
+    options.sourcePath ??
+    (options.sourceCommit
+      ? `${ORCA_SKILLS_REPOSITORY_URL}/tree/${options.sourceCommit}`
+      : ORCA_SKILLS_REPOSITORY_URL)
   return [
     `skills@${SKILLS_CLI_VERSION}`,
     'add',

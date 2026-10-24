@@ -61,10 +61,10 @@ export type SkillFreshnessInstallation = {
   errorCategory: string | null
 }
 
-const ORCA_SKILL_LOCK_SOURCE = 'stablyai/orca'
+const VEER_SKILL_LOCK_SOURCE = 'rahuljangirworks/veer'
 
-/** Whether the skills.sh lock says this name was installed from Orca's repository. */
-export function isOrcaSkillLockSource(source: string | null): boolean {
+/** Whether the skills.sh lock says this name was installed from Veer's repository. */
+export function isOrcaSkillLockSource(source: string | null, localSourcePath?: string): boolean {
   if (!source) {
     return false
   }
@@ -74,11 +74,17 @@ export function isOrcaSkillLockSource(source: string | null): boolean {
     .replace(/^https:\/\/github\.com\//, '')
     .replace(/\/+$/, '')
     .replace(/\.git$/, '')
-  return normalized === ORCA_SKILL_LOCK_SOURCE
+  // Dev installs use this checkout's skill bytes; skills.sh records its absolute path.
+  // Compare only with the source path supplied by this running build.
+  const localSource = localSourcePath?.replace(/[\\/]+$/, '')
+  return (
+    normalized === VEER_SKILL_LOCK_SOURCE ||
+    (localSource !== undefined && source.trim().replace(/[\\/]+$/, '') === localSource)
+  )
 }
 
-// Why: Orca's updater only ever passes --global, so a project's or a plugin's own copy is
-// not something Orca can act on. Without a list of past releases, a differing plugin copy
+// Why: Veer's updater only ever passes --global, so a project's or a plugin's own copy is
+// not something Veer can act on. Without a list of past releases, a differing plugin copy
 // is indistinguishable from another vendor's same-named skill, so neither scope can be
 // reported as the user's drift.
 export function skillPlacementParticipatesInGlobalFreshness(
@@ -164,6 +170,8 @@ export type SkillFreshnessInventory = {
   /** Outdated names the pinned install can safely rewrite, whoever installed them. */
   eligibleUpdateNames: string[]
   scanIssues: SkillFreshnessScanIssue[]
+  /** Exact local source used by this unpackaged Veer build, when present. */
+  localSourcePath?: string
   scannedAt: number
 }
 
@@ -185,8 +193,15 @@ export type SkillUpdateRun =
   // `stopping` covers the window between Stop and the process tree actually
   // dying — the run is still `running` (that is what blocks a second writer),
   // but the Stop affordance has already been spent.
-  | { state: 'running'; names: string[]; startedAt: number; output: string; stopping?: boolean }
-  | { state: 'success'; names: string[]; finishedAt: number; output: string }
+  | {
+      state: 'running'
+      names: string[]
+      startedAt: number
+      output: string
+      stopping?: boolean
+      copyCommand?: string
+    }
+  | { state: 'success'; names: string[]; finishedAt: number; output: string; copyCommand?: string }
   | {
       state: 'error'
       names: string[]
@@ -195,6 +210,8 @@ export type SkillUpdateRun =
       message: string
       /** Names still outdated after the run — the re-scan is the source of truth. */
       failedNames: string[]
+      /** Exact installer command used by this run, for manual retry. */
+      copyCommand?: string
     }
 
 export type SkillUpdateStartResult =

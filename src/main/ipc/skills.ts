@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import {
@@ -31,13 +31,20 @@ export function registerSkillsHandlers(store: Store, runtime?: OrcaRuntimeServic
       refresh: parsedTarget?.refresh === true
     })
   }
+  // The dev manifest is generated from the working tree, which may be ahead
+  // of GitHub or have uncommitted skill edits. Install from these exact bytes.
+  const localSourcePath = app.isPackaged ? undefined : process.cwd()
   const scanInventory = (): Promise<SkillFreshnessInventory> =>
     // Why: the update command targets this machine's global homes. WSL and SSH
     // inventories stay out until their installer rail has an equivalent proof.
-    inventorySkillFreshness({ repos: store.getRepos() })
+    inventorySkillFreshness({
+      repos: store.getRepos(),
+      ...(localSourcePath ? { localSourcePath } : {})
+    })
 
   const runner = new SkillUpdateRunner({
     sourceCommit: ORCA_BUILD_COMMIT,
+    ...(localSourcePath ? { sourcePath: localSourcePath } : {}),
     // Why: per-skill outcomes come from re-hashing what is actually on disk, not
     // from scraping stdout.
     rescanOutdatedNames: async (names) => {

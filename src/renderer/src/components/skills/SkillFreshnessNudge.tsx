@@ -74,7 +74,7 @@ export function SkillFreshnessNudge(): null {
       installation.status === 'outdated' &&
       eligibleNames.has(installation.name) &&
       // Why: a same-named skill from somewhere else is listed in the dialog, never nudged.
-      isOrcaSkillLockSource(installation.lockSource) &&
+      isOrcaSkillLockSource(installation.lockSource, inventory.localSourcePath) &&
       installation.physicalIdentity
         ? [
             {

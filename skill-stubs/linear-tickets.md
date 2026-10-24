@@ -1,6 +1,6 @@
 # Linear Tickets (Legacy Name)
 
-This discovery stub uses the legacy name `linear-tickets` for `orca-linear`; both use
+This discovery stub uses the legacy name `linear-tickets` for `veer-linear`; both use
 `ORCA linear ...`. Load the version-matched guide below.
 
 <!-- shared: resolver -->

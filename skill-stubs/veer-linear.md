@@ -1,4 +1,4 @@
-# Orca Linear
+# Veer Linear
 
 This discovery stub loads the version-matched guide from the Orca executable used for this session.
 
@@ -7,7 +7,7 @@ This discovery stub loads the version-matched guide from the Orca executable use
 ## Load the version-matched guide before running Orca commands
 
 ```text
-ORCA skills get orca-linear
+ORCA skills get veer-linear
 ```
 
 <!-- shared: no-guessing -->

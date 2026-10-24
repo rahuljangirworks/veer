@@ -21,7 +21,7 @@ jobs:
       - name: Check API health
         id: health
         run: |
-          API_URL="https://veer-api.rahuljangir-works.workers.dev"
+          API_URL="https://api.veer.rahuljangir.work"
 
           echo "Checking $API_URL..."
 
@@ -118,7 +118,7 @@ jobs:
         run: |
           REPORT="# Veer Backend Health Report\n\n"
           REPORT="${REPORT}**Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')\n"
-          REPORT="${REPORT}**API:** https://veer-api.rahuljangir-works.workers.dev\n\n"
+          REPORT="${REPORT}**API:** https://api.veer.rahuljangir.work\n\n"
 
           REPORT="${REPORT}## Status\n\n"
           REPORT="${REPORT}${{ steps.evaluate.outputs.issues }}\n\n"

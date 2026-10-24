@@ -1,4 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process'
+import { quotePowerShellLiteral } from '../../shared/powershell-native-argument'
+import { quotePosixShellUnlessPlain } from '../../shared/shell-argument-quoting'
 import {
   canonicalizeSkillUpdateNames,
   type SkillUpdateRun,
@@ -35,6 +37,8 @@ export const CANCEL_RELEASE_TIMEOUT_MS = 12_000
 export type SkillUpdateRunnerDeps = {
   /** The commit the running build was made from; the install is pinned to it. */
   sourceCommit: string
+  /** Dev checkout root; its files match the manifest produced from this worktree. */
+  sourcePath?: string
   /** Same targets `orca skills update` picks on this host. */
   detectAgentKeys?: () => string[]
   spawnProcess?: typeof spawn
@@ -57,7 +61,7 @@ function clampOutput(value: string): string {
 }
 
 /**
- * Runs the pinned `npx --yes skills@<pinned> add <orca>/tree/<commit> --skill <name>... --global
+ * Runs the pinned `npx --yes skills@<pinned> add <source> --skill <name>... --global
  * --agent ... -y` headlessly. `add` always re-copies, so the result is this build's bytes
  * however the old copy was installed or edited.
  *
@@ -107,11 +111,20 @@ export class SkillUpdateRunner {
     const npxArgs = [
       '--yes',
       ...buildAgentFeatureSkillInstallArgs(canonicalNames, {
-        sourceCommit: this.deps.sourceCommit,
+        ...(this.deps.sourcePath
+          ? { sourcePath: this.deps.sourcePath }
+          : { sourceCommit: this.deps.sourceCommit }),
         yes: true,
         agents: (this.deps.detectAgentKeys ?? detectSkillsCliUpdateAgentKeys)()
       })
     ]
+
+    // The copied retry command uses the same source, names, targets, and
+    // non-interactive flags as the spawned process. Quote the local checkout
+    // path so spaces and shell metacharacters stay inside one argument.
+    const quoteArg =
+      process.platform === 'win32' ? quotePowerShellLiteral : quotePosixShellUnlessPlain
+    const copyCommand = ['npx', ...npxArgs.map(quoteArg)].join(' ')
 
     let spawnCmd: string
     let spawnArgs: string[]
@@ -130,6 +143,7 @@ export class SkillUpdateRunner {
         finishedAt: this.deps.now(),
         output: '',
         failedNames: canonicalNames,
+        copyCommand,
         message:
           `Could not run ${npxCommand} safely from this location: its path contains one of ` +
           `${WINDOWS_BATCH_UNSAFE_CHARACTERS_LABEL}, which cmd.exe would reinterpret.`
@@ -140,7 +154,7 @@ export class SkillUpdateRunner {
     const startedAt = this.deps.now()
     const token = ++this.runToken
     this.settling = false
-    this.publish({ state: 'running', names: canonicalNames, startedAt, output: '' })
+    this.publish({ state: 'running', names: canonicalNames, startedAt, output: '', copyCommand })
 
     const child = spawnProcess(spawnCmd, spawnArgs, {
       // Why: stdin ignored keeps `process.stdin.isTTY` falsy in the child, which
@@ -190,17 +204,27 @@ export class SkillUpdateRunner {
 
     child.on('error', (error) => {
       drain()
-      this.settle(token, canonicalNames, error.message)
+      this.settle(token, canonicalNames, error.message, copyCommand)
     })
     child.on('close', (code) => {
       drain()
-      this.settle(token, canonicalNames, code === 0 ? null : `skills add exited with code ${code}`)
+      this.settle(
+        token,
+        canonicalNames,
+        code === 0 ? null : `skills add exited with code ${code}`,
+        copyCommand
+      )
     })
 
     return { started: true }
   }
 
-  private settle(token: number, names: string[], spawnError: string | null): void {
+  private settle(
+    token: number,
+    names: string[],
+    spawnError: string | null,
+    copyCommand: string
+  ): void {
     if (token !== this.runToken || this.settling || this.run.state !== 'running') {
       return
     }
@@ -223,7 +247,7 @@ export class SkillUpdateRunner {
       }
       const failed = failedNames ?? (spawnError ? names : [])
       if (failed.length === 0) {
-        this.publish({ state: 'success', names, finishedAt, output })
+        this.publish({ state: 'success', names, finishedAt, output, copyCommand })
         return
       }
       this.publish({
@@ -232,6 +256,7 @@ export class SkillUpdateRunner {
         finishedAt,
         output,
         failedNames: failed,
+        copyCommand,
         message: spawnError ?? 'Some skills could not be updated.'
       })
     }

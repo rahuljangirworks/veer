@@ -6,8 +6,8 @@ const COMMIT = 'a'.repeat(40)
 
 describe('skill update round trip', () => {
   it('runs exactly the shared builder’s unattended add, pinned skills CLI included', () => {
-    expect(roundTripAddArgs('stablyai/orca', COMMIT, 'orca-cli')).toEqual(
-      buildAgentFeatureSkillInstallArgs(['orca-cli'], {
+    expect(roundTripAddArgs('rahuljangirworks/veer', COMMIT, 'veer-cli')).toEqual(
+      buildAgentFeatureSkillInstallArgs(['veer-cli'], {
         sourceCommit: COMMIT,
         yes: true,
         agents: ['claude-code', 'universal']

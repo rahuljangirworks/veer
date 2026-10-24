@@ -7,7 +7,8 @@ const {
   inventorySkillFreshnessMock,
   getDefaultWslDistroMock,
   getWslHomeMock,
-  parseWslPathMock
+  parseWslPathMock,
+  packagedState
 } = vi.hoisted(() => ({
   handleMock: vi.fn(),
   discoverSkillsMock: vi.fn(),
@@ -15,11 +16,15 @@ const {
   inventorySkillFreshnessMock: vi.fn(),
   getDefaultWslDistroMock: vi.fn(),
   getWslHomeMock: vi.fn(),
-  parseWslPathMock: vi.fn()
+  parseWslPathMock: vi.fn(),
+  packagedState: { value: false }
 }))
 
 vi.mock('electron', () => ({
   app: {
+    get isPackaged() {
+      return packagedState.value
+    },
     getVersion: () => '9.9.9-test'
   },
   ipcMain: {
@@ -70,6 +75,7 @@ describe('registerSkillsHandlers', () => {
   }
 
   beforeEach(() => {
+    packagedState.value = false
     clearSkillDiscoveryCaches()
     handleMock.mockReset()
     discoverSkillsMock.mockReset()
@@ -246,12 +252,24 @@ describe('registerSkillsHandlers', () => {
     expect(discoverSkillsMock).not.toHaveBeenCalled()
   })
 
-  it('keeps freshness inventory local and read-only over known repositories', async () => {
+  it('checks the same local checkout used for dev skill updates', async () => {
+    const handler = getFreshnessHandler()
+
+    await handler(null)
+
+    expect(inventorySkillFreshnessMock).toHaveBeenCalledWith({
+      repos,
+      localSourcePath: process.cwd()
+    })
+    expect(getWslHomeMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps packaged skill inventory on its pinned remote source', async () => {
+    packagedState.value = true
     const handler = getFreshnessHandler()
 
     await handler(null)
 
     expect(inventorySkillFreshnessMock).toHaveBeenCalledWith({ repos })
-    expect(getWslHomeMock).not.toHaveBeenCalled()
   })
 })

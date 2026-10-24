@@ -18,22 +18,52 @@ import {
 describe('agent feature skill commands', () => {
   it('builds a global install command by default', () => {
     expect(buildAgentFeatureSkillInstallCommand(['orca-cli'])).toBe(
-      'npx skills add https://github.com/rahuljangirworks/veer --skill orca-cli --global'
+      'npx skills@1.7.2 add https://github.com/rahuljangirworks/veer --skill orca-cli --global'
     )
+  })
+
+  it('uses the exact dev checkout path when given one', () => {
+    expect(
+      buildAgentFeatureSkillInstallArgs(['computer-use', 'orchestration'], {
+        sourcePath: '/home/rahul/Veer skills',
+        yes: true,
+        agents: ['claude-code', 'universal']
+      })
+    ).toEqual([
+      'skills@1.7.2',
+      'add',
+      '/home/rahul/Veer skills',
+      '--skill',
+      'computer-use',
+      '--skill',
+      'orchestration',
+      '--global',
+      '--agent',
+      'claude-code',
+      '--agent',
+      'universal',
+      '-y'
+    ])
+    expect(() =>
+      buildAgentFeatureSkillInstallArgs(['computer-use'], {
+        sourcePath: '/home/rahul/Veer skills',
+        sourceCommit: '0'.repeat(40)
+      })
+    ).toThrow('Choose either a local skill source or a source commit.')
   })
 
   it('drops --global when installing locally', () => {
     expect(buildAgentFeatureSkillInstallCommand(['orca-cli'], { global: false })).toBe(
-      'npx skills add https://github.com/rahuljangirworks/veer --skill orca-cli'
+      'npx skills@1.7.2 add https://github.com/rahuljangirworks/veer --skill orca-cli'
     )
   })
 
   it('repeats --skill per name for multi-skill installs', () => {
     expect(buildAgentFeatureSkillInstallCommand(['orca-cli', 'orchestration'])).toBe(
-      'npx skills add https://github.com/rahuljangirworks/veer --skill orca-cli --skill orchestration --global'
+      'npx skills@1.7.2 add https://github.com/rahuljangirworks/veer --skill orca-cli --skill orchestration --global'
     )
     expect(buildAgentFeatureSkillInstallArgs(['orca-cli', 'orchestration'])).toEqual([
-      'skills',
+      'skills@1.7.2',
       'add',
       'https://github.com/rahuljangirworks/veer',
       '--skill',
@@ -77,7 +107,7 @@ describe('agent feature skill commands', () => {
     expect(
       buildAgentFeatureSkillInstallCommand(['orca-cli'], { yes: true, agents: ['universal'] })
     ).toBe(
-      'npx skills add https://github.com/rahuljangirworks/veer --skill orca-cli --global --agent universal -y'
+      'npx skills@1.7.2 add https://github.com/rahuljangirworks/veer --skill orca-cli --global --agent universal -y'
     )
     expect(buildAgentFeatureSkillUpdateCommand(['orca-cli'], { global: false, yes: true })).toBe(
       'npx skills update orca-cli --project -y'
@@ -133,7 +163,7 @@ describe('agent feature skill commands', () => {
 
   it('points the Cloud VM skill install at the Veer repository', () => {
     expect(EPHEMERAL_VMS_SKILL_INSTALL_COMMAND).toBe(
-      'npx skills add https://github.com/rahuljangirworks/veer --skill veer-per-workspace-env --global'
+      'npx skills@1.7.2 add https://github.com/rahuljangirworks/veer --skill veer-per-workspace-env --global'
     )
   })
 })

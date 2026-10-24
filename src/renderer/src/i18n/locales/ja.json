@@ -4790,8 +4790,8 @@
           "scanIoErrorWithCode": "このプラグインパスを読み取れませんでした（{{value0}}）。",
           "scanIoError": "このプラグインパスを読み取れませんでした。",
           "scanIssueLimit": "スキップされたプラグインフォルダーが多すぎるため、個別に表示できません。",
-          "unselectedForeignOne": "Orca 以外からインストールされた 1 件のスキルは選択されていません。",
-          "unselectedForeignMany": "Orca 以外からインストールされた {{value0}} 件のスキルは選択されていません。"
+          "unselectedForeignOne": "Veer 以外からインストールされた 1 件のスキルは選択されていません。",
+          "unselectedForeignMany": "Veer 以外からインストールされた {{value0}} 件のスキルは選択されていません。"
         },
         "SkillFreshnessStatusPill": {
           "updateAvailable": "更新があります",
@@ -4808,9 +4808,9 @@
         "SkillUpdateRow": {
           "oneLocation": "1 件の場所",
           "manyLocations": "{{value0}} 件の場所",
-          "notFromOrca": "Orca 以外から導入",
-          "notFromOrcaSourceTip": "{{value0}} からインストールされています。選択すると Orca のバージョンに置き換えられます。",
-          "notFromOrcaNoRecordTip": "このコピーには Orca によるインストール記録がありません。選択すると Orca のバージョンに置き換えられます。",
+          "notFromVeer": "Veer 以外から導入",
+          "notFromVeerSourceTip": "{{value0}} からインストールされています。選択すると Veer のバージョンに置き換えられます。",
+          "notFromVeerNoRecordTip": "このコピーには Veer によるインストール記録がありません。選択すると Veer のバージョンに置き換えられます。",
           "includeSkill": "{{value0}} を含める"
         },
         "host": {
@@ -4922,7 +4922,7 @@
           "157de228b4": "スキルを検査する",
           "69236de8d6": "確認中…",
           "27672470d9": "リンクを開いても何もインストールされません。まず不変バージョンを確認してください。",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
+          "66cff7a804": "https://veer.rahuljangir.work/skills/share/…",
           "93eb0fe8c7": "Orca のスキルリンク",
           "releaseNotes": "リリースノート:",
           "targetHeader": "インストール対象"

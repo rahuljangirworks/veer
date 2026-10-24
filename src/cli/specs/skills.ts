@@ -58,7 +58,7 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
       'Use --json for a deterministic object containing canonical topic metadata and content.'
     ],
     examples: [
-      'veer skills get orca-cli',
+      'veer skills get veer-cli',
       'veer skills get orchestration --full',
       'veer skills get orchestration --references',
       'veer skills get orchestration --reference recovery-and-cleanup'
@@ -93,9 +93,9 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
     ],
     examples: [
       'veer skills install',
-      'veer skills install --skill orca-cli --skill orchestration',
-      'veer skills install --skill orca-cli --local',
-      'veer skills install --skill orca-cli --agent claude-code,codex',
+      'veer skills install --skill veer-cli --skill orchestration',
+      'veer skills install --skill veer-cli --local',
+      'veer skills install --skill veer-cli --agent claude-code,codex',
       'veer skills install --all --dry-run'
     ]
   },
@@ -122,8 +122,8 @@ export const SKILL_COMMAND_SPECS: CommandSpec[] = [
     ],
     examples: [
       'veer skills update',
-      'veer skills update --skill orca-cli --skill orchestration',
-      'veer skills update --skill orca-cli --local',
+      'veer skills update --skill veer-cli --skill orchestration',
+      'veer skills update --skill veer-cli --local',
       'veer skills update --all --dry-run'
     ]
   }

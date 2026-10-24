@@ -2,15 +2,18 @@ name: Skill update round trip
 
 # Why the same paths on push as pull_request: GitHub evaluates each event's
 # filters independently. The PR already skipped README-only changes, but the
-# unfiltered `push` to main still started the 13-job matrix. Cancelling that
-# run marks the default-branch tip failed, so the repo shows a red X.
+# unfiltered `push` to main still started the matrix. Cancelling that run
+# marks the branch tip failed, so the repo shows a red X.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths: &skill-roundtrip-paths
       - 'skills/**'
+      - 'skill-guides/**'
+      - 'skill-stubs/**'
       - 'resources/skills/**'
       - 'config/scripts/verify-skill-update-roundtrip.mjs'
+      - 'config/scripts/generate-skill-bundle-manifest.mjs'
       - 'src/main/skills/skill-freshness-eligibility.ts'
       - 'src/shared/agent-feature-install-commands.ts'
       - 'src/shared/skill-freshness.ts'
@@ -20,8 +23,10 @@ on:
   merge_group:
   push:
     branches:
+      - dev
       - main
     paths: *skill-roundtrip-paths
+  workflow_dispatch:
 
 concurrency:
   group: skill-roundtrip-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}

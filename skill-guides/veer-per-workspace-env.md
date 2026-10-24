@@ -1,11 +1,11 @@
 ---
 name: veer-per-workspace-env
 description: >-
-  Set up, review, debug, or validate an Orca per-workspace environment recipe: the
+  Set up, review, debug, or validate a Veer per-workspace environment recipe: the
   on-demand, disposable runtime (cloud sandbox, VM, SSH host, or local container)
-  Orca creates fresh for each workspace. Use to stand up a new recipe end to end,
+  Veer creates fresh for each workspace. Use to stand up a new recipe end to end,
   fix an `environmentRecipes` entry in `orca.yaml`, scaffold provider lifecycle
-  scripts, or resolve an `orca vm recipe doctor` failure. Use `orca-cli` for
+  scripts, or resolve an `orca vm recipe doctor` failure. Use `veer-cli` for
   ordinary worktree and workspace creation with no recipe involved.
 ---
 
@@ -259,7 +259,7 @@ set -euo pipefail
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-payload="$(cat)"                       # Orca passes lifecycle JSON on stdin
+payload="$(cat)"                       # Veer passes lifecycle JSON on stdin
 resource_id="$(node -e 'const d=JSON.parse(process.argv[1]); process.stdout.write(d.recipeResult?.userData?.resourceId ?? "")' "$payload")"
 [ -n "$resource_id" ] || { echo "No resource id in lifecycle payload" >&2; exit 1; }
 # suspend: provider suspend "$resource_id"
@@ -361,9 +361,9 @@ the self-test tears nothing down and you must clean up by hand.
 ## Conditional references
 
 This guide covers the interview, the phase order, and the doctor loop on its own. At a gate below,
-run `ORCA skills get orca-per-workspace-env --reference references/<file>.md` and read only that
+run `ORCA skills get veer-per-workspace-env --reference references/<file>.md` and read only that
 document; `--references` lists the names. Read the reference at the gate, not before. If the CLI
-rejects `--reference`, run `ORCA skills get orca-per-workspace-env --full` once instead: it returns
+rejects `--reference`, run `ORCA skills get veer-per-workspace-env --full` once instead: it returns
 this guide plus every reference from the same CLI build, so read only the named one. If `--full` is
 rejected too, keep these rules, use the command's `--help`, and do not guess flags.
 

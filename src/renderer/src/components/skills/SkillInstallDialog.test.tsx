@@ -119,8 +119,8 @@ function installApi(previewInstall: ReturnType<typeof vi.fn>) {
 }
 
 async function inspectSkill(expectedDescription = 'A private skill'): Promise<void> {
-  fireEvent.change(screen.getByLabelText('Orca skill link'), {
-    target: { value: 'https://app.orca.dev/skills/share/share_1' }
+  fireEvent.change(screen.getByLabelText('Veer skill link'), {
+    target: { value: 'https://veer.rahuljangir.work/skills/share/share_1' }
   })
   fireEvent.click(screen.getByRole('button', { name: 'Inspect skill' }))
   await screen.findByText(expectedDescription)
@@ -421,7 +421,7 @@ describe('SkillInstallDialog', () => {
     })
     render(<SkillInstallDialog open onOpenChange={onOpenChange} />)
 
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Orca skill link' }))
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Veer skill link' }))
     // Why: the submit sits in the footer beside Close, so Enter in the field is
     // the keyboard path rather than tabbing past the back-out action.
     const footerButtons = screen
@@ -432,8 +432,8 @@ describe('SkillInstallDialog', () => {
       'Inspect skill'
     ])
     await user.type(
-      screen.getByRole('textbox', { name: 'Orca skill link' }),
-      'https://app.orca.dev/skills/share/share_1'
+      screen.getByRole('textbox', { name: 'Veer skill link' }),
+      'https://veer.rahuljangir.work/skills/share/share_1'
     )
     await user.keyboard('{Enter}')
     await screen.findByText('A private skill')
@@ -449,8 +449,8 @@ describe('SkillInstallDialog', () => {
     Object.defineProperty(window, 'api', { configurable: true, value: { skills } })
     render(<SkillInstallDialog open onOpenChange={() => undefined} />)
 
-    fireEvent.change(screen.getByLabelText('Orca skill link'), {
-      target: { value: 'https://app.orca.dev/skills/share/share_1' }
+    fireEvent.change(screen.getByLabelText('Veer skill link'), {
+      target: { value: 'https://veer.rahuljangir.work/skills/share/share_1' }
     })
     fireEvent.click(screen.getByRole('button', { name: 'Inspect skill' }))
 

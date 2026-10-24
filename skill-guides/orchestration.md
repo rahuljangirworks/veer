@@ -1,16 +1,16 @@
 ---
 name: orchestration
 description: >-
-  Coordinate supervised Orca workers: threaded messages, blocking ask/reply,
+  Coordinate supervised Veer workers: threaded messages, blocking ask/reply,
   task dispatch, worker_done/escalation waits, task DAGs, decision gates,
-  coordinator loops, and decomposing work across agents. Use `orca-cli` for full
+  coordinator loops, and decomposing work across agents. Use `veer-cli` for full
   ownership handoffs — "hand off", "handoff", "handover", "give this to another
   agent", "another worktree" — unless asked to supervise, monitor, or coordinate
   a DAG, and for terminal control, lightweight terminal prompts, shell commands,
-  Orca worktree management, and reading or waiting on terminals.
+  Veer worktree management, and reading or waiting on terminals.
 ---
 
-# Orca orchestration
+# Veer orchestration
 
 Orchestration is Orca's structured coordination layer. It records who owns work,
 which attempt is authoritative, and when supervised work has settled.
@@ -36,11 +36,11 @@ absence included, is a checkpoint.
 | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------ |
 | The user explicitly asks to supervise, monitor, wait for results, track completion, coordinate a DAG, use a decision gate, or manage ask/reply | Coordinator             | Use the supervised loop below                                                  |
 | The current prompt contains a live injected preamble with Task and Dispatch IDs                                                                | Dispatched worker       | Follow the preamble and the worker obligations below                           |
-| The user asks to hand off ownership or start another agent/worktree without supervision                                                        | Handoff owner           | Use `orca-cli`; create no Run, Task, or Dispatch and do not monitor completion |
+| The user asks to hand off ownership or start another agent/worktree without supervision                                                        | Handoff owner           | Use `veer-cli`; create no Run, Task, or Dispatch and do not monitor completion |
 | A message carries a legacy authority label                                                                                                     | Compatibility operator  | Load the legacy contract reference before any lifecycle mutation               |
-| No live preamble and no explicit supervision                                                                                                   | Ordinary terminal agent | Do not emit lifecycle messages; use `orca-cli` for terminal/worktree work      |
+| No live preamble and no explicit supervision                                                                                                   | Ordinary terminal agent | Do not emit lifecycle messages; use `veer-cli` for terminal/worktree work      |
 
-Model or effort selection does not make a handoff supervised: `orca-cli`'s
+Model or effort selection does not make a handoff supervised: `veer-cli`'s
 `worktree create --agent` and `agent launch` take `--model` and `--effort`, and
 open a chat or a terminal per the user's Chat UI setting, as `worker-start` does.
 Never substitute a non-Orca subagent tool when Orca orchestration provenance was

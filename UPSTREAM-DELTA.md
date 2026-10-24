@@ -34,6 +34,94 @@ The procedure for updating this file is
 - Veer-specific follow-up: brain ledger `.brain/veer/_agent/rules/UPSTREAM-DELTA.md` updated to this baseline. `.agents/brain` resolves to the same file.
 - Validation: `verify-privacy-boundary.sh` passed. `verify-branding.sh` passed. `pnpm tc` passed (16,891 + 2,991 + 31 + 14,998 files). Vitest personal-fork plus profile auth config: 5 files, 23 tests passed. `pnpm build` was not run.
 
+## 2026-10-25 — Preserve the Veer skill binding and update source
+
+- Working baseline: `dev` at `e7445ad07da8be35f87c375294909f6c0226f97f`.
+  This hash identifies the state before the skill repair.
+- Failure observed in the running dev app: **Update skills** showed `Updated 0 of
+  2 skills` and `skills add exited with code 1` for `computer-use` and
+  `orchestration`. Npm's log confirmed that the updater tried
+  `skills@1.7.2 add https://github.com/rahuljangirworks/veer/tree/<build-commit>`.
+  The local `dev` branch was 3,155 commits ahead of `origin/dev`, and both skill
+  bundles differed from that build commit. Even a successful fetch of that commit
+  could not match the working-tree `resources/skills/current-manifest.json`.
+- Intentional fix: unpackaged desktop updates and `veer-dev skills install/update`
+  use the absolute current checkout as the `skills add` source. Packaged builds
+  retain their pinned GitHub commit source. The updater must pass explicit agent
+  targets and `-y`, then rescan installed bytes before reporting success. The
+  dialog's **Copy command** must show the actual source and arguments used by
+  that run, with a quoted local path.
+- Local installs truthfully record the checkout path as the skills lock source.
+  Treat it as Veer-owned **only when it equals this running dev checkout**; do
+  not rewrite the lock to claim the GitHub repository supplied dirty local bytes.
+  Preserve the Veer GitHub source check for packaged installs and reject
+  unrelated same-named skills from other paths.
+- Keep all ten `skills/*/SKILL.md` frontmatter names, `skill-guides/`,
+  `skill-stubs/`, `src/cli/bundled-skill-guides.ts`, and
+  `resources/skills/current-manifest.json` in sync through the two generators.
+  In particular, the workspace environment ID is `veer-per-workspace-env`,
+  while `orca://` and other compatibility identifiers remain intentional.
+  Regenerate with `node config/scripts/generate-bundled-skill-guides.mjs --write`
+  and `node config/scripts/generate-skill-bundle-manifest.mjs --write`; verify
+  with `pnpm run verify:bundled-skill-guides` and
+  `pnpm run verify:skill-bundle-manifest` before testing.
+- Owned source seams to preserve in an upstream merge:
+  `src/main/ipc/skills.ts`, `src/main/skills/skill-update-run.ts`,
+  `src/main/skills/skill-freshness-inventory.ts`,
+  `src/shared/agent-feature-install-commands.ts`,
+  `src/shared/skill-freshness.ts`, `src/cli/handlers/skills.ts`,
+  `src/renderer/src/components/skills/SkillFreshnessUpdateDialog.tsx`,
+  `skill-freshness-grouping.ts`, `SkillFreshnessNudge.tsx`, and
+  `src/renderer/src/lib/skill-freshness-display-status.ts`.
+- If the same error returns: expand **Show log** and inspect the failing source;
+  compare the running build's manifest digest with the actual installed skill
+  package; check whether `dev` is ahead of the GitHub fork or has uncommitted
+  skill edits; run `veer-dev skills update --skill computer-use --skill
+  orchestration --agent universal --dry-run --json` to verify the dev source is
+  the checkout. Do not diagnose from exit code 1 alone. The main process caches
+  its skill manifest for its lifetime, so restart the dev app after changing
+  the manifest or main updater before judging the live UI.
+- Verification completed: the local `skills@1.7.2 add` updated both installed
+  bundles, and their package digests matched the current Veer manifest; a fresh
+  inventory reported both `current` and ineligible for another update. The
+  skill suite passed 1,105 tests, personal-fork passed 27 tests, `pnpm tc` and
+  privacy/branding audits passed. The changed-code quality gate had five
+  findings only in separate, already uncommitted voice files. The dev app was
+  rebuilt and restarted; live IPC then reported both canonical copies `current`,
+  no eligible update for either skill, and runtime `ready`.
+
+### Same-day system repair: dangling workspace skill alias
+
+- A later **Update skills** dialog showed `veer-per-workspace-env` as **Skipped**
+  with two “inaccessible” locations. Live inventory identified a real broken
+  link at `~/.kiro/skills/veer-per-workspace-env` pointing to the missing
+  `~/.agents/skills/veer-per-workspace-env`. The global lock still named the
+  Veer GitHub source, so lock provenance alone did not prove files existed.
+- Restored only that missing global skill from this checkout with
+  `npx --yes skills@1.7.2 add /home/rahul/projacts/veer --skill
+  veer-per-workspace-env --global --agent universal -y`. The Kiro link then
+  resolved to the canonical directory, both paths matched the current manifest
+  digest, and live inventory reported a `current` canonical copy with no
+  eligible update. The renderer was sent its installed-skills change event.
+- The other row had `rootId: repo-scan-limit` and
+  `errorCategory: repository-scan-limit`. It is a sentinel for omitted
+  repository provider roots after the 128-root scan cap, **not an observed
+  skill copy**. The registered `gms-pulse-dash` repository exists, but its
+  `.codebuddy/skills` directory does not; do not create that directory or
+  remove the repository to silence this marker. If a future dialog shows it,
+  inspect `rootId`, `topology`, and `errorCategory` before repairing a path.
+  With the global copy current, the repo-scope sentinel does not make this
+  skill eligible or appear as an update row on a fresh review.
+- The GitHub skill round-trip workflow previously watched `main` pushes while
+  Veer's active branch is `dev`. It now watches skill-related changes on both
+  branches and offers a manual run. Check the workflow result for the pushed
+  fix commit; a local test cannot prove the pinned GitHub source can be fetched.
+- The scheduled backend monitor and release notifier still referenced the old
+  `workers.dev` hostname, which returned 404 and made the monitor fail. Both
+  now use `https://api.veer.rahuljangir.work`; `/config.json` and
+  `/api/updates/check?version=1.4.178&platform=linux` returned HTTP 200 there
+  before the workflow change. Rerun the backend monitor after pushing.
+
 ## Intentional Veer areas to re-check on every sync
 
 - Veer product and CLI branding, including the canonical `veer` launcher and

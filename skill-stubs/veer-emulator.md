@@ -1,4 +1,4 @@
-# Orca Emulator
+# Veer Emulator
 
 This discovery stub loads the version-matched guide from the Orca executable used for this session.
 
@@ -10,7 +10,7 @@ handles device scoping, helper lifecycle, and worktree context.
 ## Load the version-matched guide before running Orca commands
 
 ```text
-ORCA skills get orca-emulator
+ORCA skills get veer-emulator
 ```
 
 <!-- shared: no-guessing -->

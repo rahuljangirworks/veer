@@ -1,4 +1,4 @@
-# Orca Emulator (Android)
+# Veer Emulator (Android)
 
 This discovery stub loads the version-matched guide from the Orca executable used for this session.
 
@@ -7,7 +7,7 @@ This discovery stub loads the version-matched guide from the Orca executable use
 ## Load the version-matched guide before running Orca commands
 
 ```text
-ORCA skills get orca-emulator-android
+ORCA skills get veer-emulator-android
 ```
 
 <!-- shared: no-guessing -->

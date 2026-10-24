@@ -4956,8 +4956,8 @@
           "scanIoErrorWithCode": "Orca could not read this plugin path ({{value0}}).",
           "scanIoError": "Orca could not read this plugin path.",
           "scanIssueLimit": "Orca found too many skipped plugin folders to list individually.",
-          "unselectedForeignOne": "1 skill not installed by Orca is unselected.",
-          "unselectedForeignMany": "{{value0}} skills not installed by Orca are unselected."
+          "unselectedForeignOne": "1 skill not installed by Veer is unselected.",
+          "unselectedForeignMany": "{{value0}} skills not installed by Veer are unselected."
         },
         "SkillUpdateResultRows": {
           "stillOutdated": "Still out of date after the update ran."
@@ -4965,9 +4965,9 @@
         "SkillUpdateRow": {
           "oneLocation": "1 location",
           "manyLocations": "{{value0}} locations",
-          "notFromOrca": "Not from Orca",
-          "notFromOrcaSourceTip": "Installed from {{value0}}. Selecting it replaces it with Orca’s version.",
-          "notFromOrcaNoRecordTip": "No Orca install record for this copy. Selecting it replaces it with Orca’s version.",
+          "notFromVeer": "Not from Veer",
+          "notFromVeerSourceTip": "Installed from {{value0}}. Selecting it replaces it with Veer’s version.",
+          "notFromVeerNoRecordTip": "No Veer install record for this copy. Selecting it replaces it with Veer’s version.",
           "includeSkill": "Include {{value0}}"
         },
         "SkillFreshnessStatusPill": {
@@ -5084,8 +5084,8 @@
           "157de228b4": "Inspect skill",
           "69236de8d6": "Checking…",
           "27672470d9": "Opening the link does not install anything. Review the immutable version first.",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
-          "93eb0fe8c7": "Orca skill link",
+          "66cff7a804": "https://veer.rahuljangir.work/skills/share/…",
+          "93eb0fe8c7": "Veer skill link",
           "releaseNotes": "Release notes:",
           "targetHeader": "Installation Target"
         },
@@ -5303,7 +5303,7 @@
           "reconnectBeforeInstalling": "Reconnect your Orca account before installing.",
           "bundleVerificationFailed": "Installation failed before Orca could verify the requested bundle.",
           "destinationAlreadyFinished": "The destination had already finished this installation.",
-          "enterShareLink": "Enter an Orca skill share link.",
+          "enterShareLink": "Enter a Veer skill share link.",
           "shareUnavailable": "This share is unavailable. The link may be invalid, expired, or revoked.",
           "requestedVersionVerificationFailed": "Installation failed before Orca could verify the requested version.",
           "versionVerificationFailed": "Orca could not verify the requested version.",

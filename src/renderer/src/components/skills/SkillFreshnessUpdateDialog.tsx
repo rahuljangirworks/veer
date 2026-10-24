@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { AlertTriangle, CheckCircle2, ChevronDown, Copy, Loader2, RefreshCw } from 'lucide-react'
 import {
-  canonicalizeSkillUpdateNames,
   isSkillScanIssueNeedingAttention,
   isSkillScanIssueTruncatingScan,
   type SkillFreshnessInventory
@@ -9,7 +8,6 @@ import {
 import { useSkillFreshness } from '@/hooks/useSkillFreshness'
 import { useActiveProjectSkillRuntime } from '@/hooks/useActiveProjectSkillRuntime'
 import { notifyInstalledAgentSkillsChanged } from '@/hooks/useInstalledAgentSkills'
-import { buildAgentFeatureSkillInstallCommand } from '@/lib/agent-feature-install-commands'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import {
@@ -60,7 +58,6 @@ function RunLog({ output }: { output: string }): React.JSX.Element | null {
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-1 min-w-0">
-        {/* Displayed verbatim, never parsed — `skills add` has no --json. */}
         <pre className="scrollbar-sleek max-h-40 overflow-auto whitespace-pre-wrap [overflow-wrap:anywhere] rounded-md border border-border bg-muted px-3 py-2.5 font-mono text-[11px] leading-relaxed text-muted-foreground">
           {output.trim()}
         </pre>
@@ -105,9 +102,12 @@ export function SkillFreshnessUpdateDialog(): React.JSX.Element {
   const runNames = useMemo(() => (runNamesKey ? runNamesKey.split('\n') : []), [runNamesKey])
   const groups = useMemo(
     () =>
-      inventory
-        ? groupSkillFreshness(inventory.installations, inventory.eligibleUpdateNames, runNames)
-        : [],
+      groupSkillFreshness(
+        inventory?.installations ?? [],
+        inventory?.eligibleUpdateNames ?? [],
+        runNames,
+        inventory?.localSourcePath
+      ),
     [inventory, runNames]
   )
   const selection = useSkillUpdateSelection(groups)
@@ -176,14 +176,11 @@ export function SkillFreshnessUpdateDialog(): React.JSX.Element {
   }
 
   const handleCopyCommand = (): void => {
-    const names = run.state === 'error' ? canonicalizeSkillUpdateNames(run.failedNames) : null
-    if (!names) {
+    if (run.state !== 'error' || !run.copyCommand) {
       return
     }
-    // Clipboard writes reject on a denied permission or an unfocused document;
-    // without this the button just never flips to "Copied".
     void navigator.clipboard
-      .writeText(buildAgentFeatureSkillInstallCommand(names))
+      .writeText(run.copyCommand)
       .then(() => {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
@@ -362,21 +359,26 @@ export function SkillFreshnessUpdateDialog(): React.JSX.Element {
               >
                 {translate('auto.components.skills.SkillFreshnessUpdateDialog.retry', 'Retry')}
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                className="gap-1.5"
-                onClick={handleCopyCommand}
-              >
-                <Copy className="size-3.5" />
-                {copied
-                  ? translate('auto.components.skills.SkillFreshnessUpdateDialog.copied', 'Copied')
-                  : translate(
-                      'auto.components.skills.SkillFreshnessUpdateDialog.copyCommand',
-                      'Copy command'
-                    )}
-              </Button>
+              {run.copyCommand ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  className="gap-1.5"
+                  onClick={handleCopyCommand}
+                >
+                  <Copy className="size-3.5" />
+                  {copied
+                    ? translate(
+                        'auto.components.skills.SkillFreshnessUpdateDialog.copied',
+                        'Copied'
+                      )
+                    : translate(
+                        'auto.components.skills.SkillFreshnessUpdateDialog.copyCommand',
+                        'Copy command'
+                      )}
+                </Button>
+              ) : null}
             </div>
           </div>
         ) : null}

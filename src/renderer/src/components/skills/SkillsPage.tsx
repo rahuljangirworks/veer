@@ -170,7 +170,7 @@ export default function SkillsPage(): React.JSX.Element {
     if (!pendingSkillShareId) {
       return
     }
-    setInstallLink(`https://app.orca.dev/skills/share/${pendingSkillShareId}`)
+    setInstallLink(`https://veer.rahuljangir.work/skills/share/${pendingSkillShareId}`)
     setInstallOpen(true)
     clearPendingSkillShare()
   }, [clearPendingSkillShare, pendingSkillShareId])

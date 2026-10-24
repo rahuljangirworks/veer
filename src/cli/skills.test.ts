@@ -2,18 +2,14 @@ import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { EventEmitter } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { delimiter, join } from 'node:path'
+import { delimiter, join, resolve } from 'node:path'
 import type * as CodexCliCommandModule from '../shared/node-cli-command-resolution'
 import { WINDOWS_BATCH_UNSAFE_CHARACTERS_LABEL } from '../shared/windows-batch-spawn'
 import { SKILLS_CLI_VERSION } from '../shared/agent-feature-install-commands'
 
 const COMMIT = '0123456789abcdef0123456789abcdef01234567'
-const PINNED_ADD = [
-  '--yes',
-  `skills@${SKILLS_CLI_VERSION}`,
-  'add',
-  `https://github.com/stablyai/orca/tree/${COMMIT}`
-]
+const SOURCE_URL = `https://github.com/rahuljangirworks/veer/tree/${COMMIT}`
+const PINNED_ADD = ['--yes', `skills@${SKILLS_CLI_VERSION}`, 'add', SOURCE_URL]
 const DETECTED_AGENTS = ['--agent', 'claude-code', '--agent', 'universal']
 
 const {
@@ -358,7 +354,7 @@ describe('veer skills CLI', () => {
     await main(['skills', 'install', '--skill', 'alpha', '--dry-run'], '/tmp/repo')
 
     expect(stdoutText(stdoutSpy)).toBe(
-      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y\n\n` +
+      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y\n\n` +
         'Rerun without --dry-run to install now.\n'
     )
     expect(spawnMock).not.toHaveBeenCalled()
@@ -372,7 +368,7 @@ describe('veer skills CLI', () => {
     expect(stdoutText(stdoutSpy)).toBe(
       `${JSON.stringify(
         {
-          command: `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y`,
+          command: `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y`,
           skills: ['alpha'],
           global: true,
           executed: false
@@ -389,7 +385,7 @@ describe('veer skills CLI', () => {
     await main(['skills', 'install', '--skill', 'alpha', '--local', '--dry-run'], '/tmp/repo')
 
     expect(stdoutText(stdoutSpy)).toBe(
-      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --agent claude-code --agent universal -y\n\n` +
+      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --agent claude-code --agent universal -y\n\n` +
         'Rerun without --dry-run to install now.\n'
     )
 
@@ -402,7 +398,7 @@ describe('veer skills CLI', () => {
     expect(stdoutText(stdoutSpy)).toBe(
       `${JSON.stringify(
         {
-          command: `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --agent claude-code --agent universal -y`,
+          command: `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --agent claude-code --agent universal -y`,
           skills: ['alpha'],
           global: false,
           executed: false
@@ -454,7 +450,7 @@ describe('veer skills CLI', () => {
         '--yes',
         `skills@${SKILLS_CLI_VERSION}`,
         'add',
-        `https://github.com/stablyai/orca/tree/${COMMIT}`,
+        `https://github.com/rahuljangirworks/veer/tree/${COMMIT}`,
         '--skill',
         'alpha',
         '--global',
@@ -572,7 +568,7 @@ describe('veer skills CLI', () => {
     await main(['skills', 'update', '--skill', 'legacy-alpha', '--dry-run'], '/tmp/repo')
 
     expect(stdoutText(stdoutSpy)).toBe(
-      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y\n\n` +
+      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y\n\n` +
         'Rerun without --dry-run to update now.\n'
     )
     expect(spawnMock).not.toHaveBeenCalled()
@@ -589,7 +585,7 @@ describe('veer skills CLI', () => {
     expect(stdoutText(stdoutSpy)).toBe(
       `${JSON.stringify(
         {
-          command: `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --agent claude-code --agent universal -y`,
+          command: `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --agent claude-code --agent universal -y`,
           skills: ['alpha'],
           global: false,
           executed: false
@@ -791,7 +787,7 @@ describe('veer skills CLI', () => {
     )
   })
 
-  it('updates with the same pinned add and agent targets as install', async () => {
+  it('uses the pinned source for packaged updates and the checkout for dev updates', async () => {
     const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
     await main(['skills', 'install', '--skill', 'alpha', '--dry-run', '--json'], '/tmp/repo')
@@ -800,7 +796,11 @@ describe('veer skills CLI', () => {
     const [install, update] = stdoutSpy.mock.calls.map((call) => JSON.parse(String(call[0])))
     // Why: `skills update` follows GitHub HEAD, which runs ahead of this release.
     expect(update.command).toBe(install.command)
-    expect(update.command).toContain(`add https://github.com/stablyai/orca/tree/${COMMIT}`)
+    vi.stubEnv('ORCA_DEV_CLI_INVOCATION', '1')
+    await main(['skills', 'update', '--skill', 'alpha', '--dry-run', '--json'], '/tmp/repo')
+    expect(String(stdoutSpy.mock.calls.at(-1)?.[0])).toContain(
+      `add ${resolve(__dirname, '../..')} --skill alpha`
+    )
   })
 
   it('honours an explicit --agent list for an update', async () => {
@@ -812,7 +812,7 @@ describe('veer skills CLI', () => {
     )
 
     expect(stdoutText(stdoutSpy)).toContain(
-      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --global --agent universal -y`
+      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --global --agent universal -y`
     )
   })
 
@@ -823,7 +823,7 @@ describe('veer skills CLI', () => {
     await main(['skills', 'update', '--skill', 'alpha', '--dry-run'], '/tmp/repo')
 
     expect(stdoutText(stdoutSpy)).toContain(
-      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --global --agent universal -y`
+      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --global --agent universal -y`
     )
   })
 
@@ -923,7 +923,7 @@ describe('veer skills CLI', () => {
     )
 
     expect(stdoutText(stdoutSpy)).toBe(
-      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y\n\n` +
+      `npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y\n\n` +
         'Rerun without --dry-run to install now.\n'
     )
     expect(spawnMock).not.toHaveBeenCalled()
@@ -941,7 +941,7 @@ describe('veer skills CLI', () => {
 
     // Why: stdout belongs to the child, so this record has to go to stderr.
     expect(stderrSpy).toHaveBeenCalledWith(
-      `Running: npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/stablyai/orca/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y\n`
+      `Running: npx --yes skills@${SKILLS_CLI_VERSION} add https://github.com/rahuljangirworks/veer/tree/${COMMIT} --skill alpha --global --agent claude-code --agent universal -y\n`
     )
   })
 

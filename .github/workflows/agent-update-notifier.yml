@@ -195,7 +195,7 @@ jobs:
         run: |
           # Note: This requires a backend endpoint that accepts version updates
           # For now, just verify the backend is accessible
-          curl -f "https://veer-api.rahuljangir-works.workers.dev/config.json" || echo "Backend update skipped"
+          curl -f "https://api.veer.rahuljangir.work/config.json" || echo "Backend update skipped"
 
       - name: Generate shareable social posts
         id: social

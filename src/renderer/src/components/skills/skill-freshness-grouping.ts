@@ -79,7 +79,8 @@ export function locationChip(installation: SkillFreshnessInstallation): SkillLoc
 export function groupSkillFreshness(
   installations: readonly SkillFreshnessInstallation[],
   eligibleUpdateNames: readonly string[],
-  alwaysIncludeNames: readonly string[] = []
+  alwaysIncludeNames: readonly string[] = [],
+  localSourcePath?: string
 ): SkillFreshnessGroupModel[] {
   const eligible = new Set(eligibleUpdateNames)
   const pinned = new Set(alwaysIncludeNames)
@@ -116,7 +117,7 @@ export function groupSkillFreshness(
     groups.push({
       name,
       status: eligible.has(name) ? 'update-available' : 'cannot-update',
-      orcaOwned: isOrcaSkillLockSource(lockSource),
+      orcaOwned: isOrcaSkillLockSource(lockSource, localSourcePath),
       lockSource,
       locations
     })

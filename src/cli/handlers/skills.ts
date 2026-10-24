@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import type { CommandHandler } from '../dispatch'
 import { RuntimeClientError } from '../runtime-client'
 import { getRepeatedStringFlag } from '../flags'
@@ -21,6 +23,8 @@ import {
   SKILLS_CLI_ENV_OVERRIDES
 } from '../../shared/agent-feature-install-commands'
 import { readOrcaCliBuildCommit } from '../cli-version'
+import { quotePowerShellLiteral } from '../../shared/powershell-native-argument'
+import { quotePosixShellUnlessPlain } from '../../shared/shell-argument-quoting'
 
 function resolveSelectedSkillNames(
   flags: Map<string, string | boolean>,
@@ -168,8 +172,19 @@ function resolveAgentKeys(verb: SkillMutationVerb, flags: Map<string, string | b
 }
 
 function buildNpxSkillsArgs(skillNames: string[], global: boolean, agents: string[]): string[] {
-  const sourceCommit = readOrcaCliBuildCommit()
-  if (!sourceCommit) {
+  // Dev guides and the freshness manifest come from this checkout's current
+  // files. A GitHub commit may be unpublished or older than those files.
+  const devRoot = resolve(__dirname, '../../..')
+  const sourcePath = process.env.ORCA_DEV_CLI_INVOCATION === '1' ? devRoot : undefined
+  if (sourcePath && !existsSync(join(sourcePath, 'skills'))) {
+    throw new RuntimeClientError(
+      'invalid_environment',
+      `Could not find bundled skills in the Veer dev checkout: ${sourcePath}`
+    )
+  }
+  const sourceCommit = sourcePath ? undefined : readOrcaCliBuildCommit()
+  const source = sourcePath ? { sourcePath } : sourceCommit ? { sourceCommit } : null
+  if (!source) {
     throw new RuntimeClientError(
       'invalid_environment',
       'Could not read the commit this Veer CLI was built from, so there is no source to install skills from.'
@@ -179,13 +194,20 @@ function buildNpxSkillsArgs(skillNames: string[], global: boolean, agents: strin
   // `skills`, which strands an unattended host just like the picker does.
   return [
     '--yes',
-    ...buildAgentFeatureSkillInstallArgs(skillNames, { sourceCommit, global, yes: true, agents })
+    ...buildAgentFeatureSkillInstallArgs(skillNames, {
+      ...source,
+      global,
+      yes: true,
+      agents
+    })
   ]
 }
 
 /** Render the exact argv a real run spawns, so --dry-run can never drift from it. */
 function formatNpxCommand(args: string[]): string {
-  return `npx ${args.join(' ')}`
+  const quoteArg =
+    process.platform === 'win32' ? quotePowerShellLiteral : quotePosixShellUnlessPlain
+  return ['npx', ...args.map(quoteArg)].join(' ')
 }
 
 function formatSkillSelectionHelp(verb: SkillMutationVerb, skillNames: string[]): string {

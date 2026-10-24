@@ -87,10 +87,7 @@ export function SkillInstallDialog({
     const shareId = parseSkillShareId(value)
     if (!shareId) {
       setError(
-        translate(
-          'auto.components.skills.install.enterShareLink',
-          'Enter an Orca skill share link.'
-        )
+        translate('auto.components.skills.install.enterShareLink', 'Enter a Veer skill share link.')
       )
       return
     }

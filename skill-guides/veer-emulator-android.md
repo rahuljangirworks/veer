@@ -1,8 +1,8 @@
 ---
 name: veer-emulator-android
 description: >-
-  Android device and emulator control from inside Orca over adb, with the live
-  device view in Orca's emulator pane. Use when driving an adb-connected emulator
+  Android device and emulator control from inside Veer over adb, with the live
+  device view in Veer's emulator pane. Use when driving an adb-connected emulator
   or phone on Windows, Linux, or macOS: booting AVDs, taps, swipes, typing,
   hardware buttons, rotation, app install and launch, runtime permissions, the
   accessibility tree, and logcat. For an iOS simulator use the iOS emulator
@@ -10,7 +10,7 @@ description: >-
 license: Apache-2.0
 ---
 
-# Orca Emulator (Android)
+# Veer Emulator (Android)
 
 `ORCA` is a placeholder for the executable you resolved in the stub; substitute it before running.
 
@@ -114,5 +114,5 @@ ORCA emulator logcat --lines 100 --json
 ORCA emulator kill --json
 ```
 
-See also: `orca-emulator` for iOS simulators, `orca-cli` for terminals, worktrees, and the
+See also: `veer-emulator` for iOS simulators, `veer-cli` for terminals, worktrees, and the
 built-in browser, and `computer-use` for desktop UI outside the emulator.

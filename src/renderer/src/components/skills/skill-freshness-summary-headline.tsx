@@ -86,11 +86,11 @@ export function SummaryHeadline({
         {unselectedForeignCount === 1
           ? translate(
               'auto.components.skills.SkillFreshnessUpdateDialog.unselectedForeignOne',
-              '1 skill not installed by Orca is unselected.'
+              '1 skill not installed by Veer is unselected.'
             )
           : translate(
               'auto.components.skills.SkillFreshnessUpdateDialog.unselectedForeignMany',
-              '{{value0}} skills not installed by Orca are unselected.',
+              '{{value0}} skills not installed by Veer are unselected.',
               { value0: unselectedForeignCount }
             )}
       </p>

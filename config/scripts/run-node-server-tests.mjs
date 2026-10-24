@@ -82,7 +82,7 @@ if (artifact) {
   )
   process.stdout.write(`${JSON.stringify({ target, ...response })}\n`)
 
-  const source = `https://github.com/stablyai/orca/tree/${resolveBuildSourceCommit()}`
+  const source = `https://github.com/rahuljangirworks/veer/tree/${resolveBuildSourceCommit()}`
   const cli = runProcessSync({
     program: runtimePath,
     args: [
@@ -90,7 +90,7 @@ if (artifact) {
       'skills',
       'install',
       '--skill',
-      'orca-cli',
+      'veer-cli',
       '--agent',
       'universal',
       '--dry-run'

@@ -27,8 +27,7 @@ type RecipeCatalogEntry = Awaited<
 
 // Why: the pane leans on the skill, so the nudge is one line — the skill carries
 // provider choice, prerequisites, the snapshot build, agent auth, and validation.
-const AGENT_PROMPT =
-  'Use the proxmox-lxc-setup skill to set up a per-workspace environment for this repo on Proxmox.'
+const AGENT_PROMPT = `Use the ${EPHEMERAL_VMS_SKILL_NAME} skill to set up a per-workspace environment for this repo on Proxmox.`
 
 function ProxmoxSettingsPanel(): React.JSX.Element {
   const proxmoxLxcSettings = useAppStore((state) => state.settings?.proxmoxLxcSettings) || {

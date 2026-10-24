@@ -4813,8 +4813,8 @@
           "scanIoErrorWithCode": "Orca n'a pas pu lire ce chemin de plugin ({{value0}}).",
           "scanIoError": "Orca n'a pas pu lire ce chemin de plugin.",
           "scanIssueLimit": "Orca a trouvé trop de dossiers de plugins ignorés pour pouvoir les lister un par un.",
-          "unselectedForeignOne": "1 skill non installé par Orca n’est pas sélectionné.",
-          "unselectedForeignMany": "{{value0}} skills non installés par Orca ne sont pas sélectionnés."
+          "unselectedForeignOne": "1 skill non installé par Veer n’est pas sélectionné.",
+          "unselectedForeignMany": "{{value0}} skills non installés par Veer ne sont pas sélectionnés."
         },
         "SkillUpdateResultRows": {
           "stillOutdated": "Toujours pas à jour après l'exécution de la mise à jour."
@@ -4822,9 +4822,9 @@
         "SkillUpdateRow": {
           "oneLocation": "1 emplacement",
           "manyLocations": "{{value0}} emplacements",
-          "notFromOrca": "Hors Orca",
-          "notFromOrcaSourceTip": "Installé depuis {{value0}}. Le sélectionner le remplace par la version d’Orca.",
-          "notFromOrcaNoRecordTip": "Aucune trace d’installation par Orca pour cette copie. La sélectionner la remplace par la version d’Orca.",
+          "notFromVeer": "Hors Veer",
+          "notFromVeerSourceTip": "Installé depuis {{value0}}. Le sélectionner le remplace par la version d’Veer.",
+          "notFromVeerNoRecordTip": "Aucune trace d’installation par Veer pour cette copie. La sélectionner la remplace par la version d’Veer.",
           "includeSkill": "Inclure {{value0}}"
         },
         "SkillFreshnessStatusPill": {
@@ -4941,7 +4941,7 @@
           "157de228b4": "Inspecter le skill",
           "69236de8d6": "Vérification…",
           "27672470d9": "Ouvrir le lien n'installe rien. Examinez d'abord la version immuable.",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
+          "66cff7a804": "https://veer.rahuljangir.work/skills/share/…",
           "93eb0fe8c7": "Lien de skill Orca",
           "releaseNotes": "Notes de version :",
           "targetHeader": "Cible d'installation"

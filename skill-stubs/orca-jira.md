@@ -1,4 +1,4 @@
-# Orca Jira
+# Veer Jira
 
 This discovery stub loads the version-matched guide from the Orca executable used for this session.
 

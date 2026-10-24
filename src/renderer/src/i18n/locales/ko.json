@@ -4790,8 +4790,8 @@
           "scanIoErrorWithCode": "이 플러그인 경로를 읽지 못했습니다({{value0}}).",
           "scanIoError": "이 플러그인 경로를 읽지 못했습니다.",
           "scanIssueLimit": "건너뛴 플러그인 폴더가 너무 많아 개별적으로 표시할 수 없습니다.",
-          "unselectedForeignOne": "Orca에서 설치하지 않은 스킬 1개는 선택되지 않았습니다.",
-          "unselectedForeignMany": "Orca에서 설치하지 않은 스킬 {{value0}}개는 선택되지 않았습니다."
+          "unselectedForeignOne": "Veer에서 설치하지 않은 스킬 1개는 선택되지 않았습니다.",
+          "unselectedForeignMany": "Veer에서 설치하지 않은 스킬 {{value0}}개는 선택되지 않았습니다."
         },
         "SkillFreshnessStatusPill": {
           "updateAvailable": "업데이트 가능",
@@ -4808,9 +4808,9 @@
         "SkillUpdateRow": {
           "oneLocation": "위치 1개",
           "manyLocations": "위치 {{value0}}개",
-          "notFromOrca": "Orca에서 설치하지 않음",
-          "notFromOrcaSourceTip": "{{value0}}에서 설치되었습니다. 선택하면 Orca 버전으로 교체됩니다.",
-          "notFromOrcaNoRecordTip": "이 사본에는 Orca 설치 기록이 없습니다. 선택하면 Orca 버전으로 교체됩니다.",
+          "notFromVeer": "Veer에서 설치하지 않음",
+          "notFromVeerSourceTip": "{{value0}}에서 설치되었습니다. 선택하면 Veer 버전으로 교체됩니다.",
+          "notFromVeerNoRecordTip": "이 사본에는 Veer 설치 기록이 없습니다. 선택하면 Veer 버전으로 교체됩니다.",
           "includeSkill": "{{value0}} 포함"
         },
         "host": {
@@ -4922,7 +4922,7 @@
           "157de228b4": "스킬 점검",
           "69236de8d6": "확인 중…",
           "27672470d9": "링크를 열어도 아무것도 설치되지 않습니다. 먼저 변경할 수 없는 버전을 검토하세요.",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
+          "66cff7a804": "https://veer.rahuljangir.work/skills/share/…",
           "93eb0fe8c7": "Orca 스킬 링크",
           "releaseNotes": "릴리스 노트:",
           "targetHeader": "설치 대상"
