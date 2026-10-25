@@ -1,0 +1,85 @@
+name: Fedora RPM
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths: &rpm-paths
+      - '.github/workflows/fedora-rpm.yml'
+      - '.github/actions/install-mobile-dependencies/**'
+      - 'config/**'
+      - 'mobile/**'
+      - 'native/**'
+      - 'resources/**'
+      - 'skill-guides/**'
+      - 'skill-stubs/**'
+      - 'skills/**'
+      - 'src/**'
+      - 'electron.vite.config.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  push:
+    branches: [dev]
+    paths: *rpm-paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fedora-rpm-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rpm:
+    name: Fedora x86_64 RPM
+    # The current ubuntu-latest image builds node-pty against GLIBC_2.42.
+    # Keep the packaging host older and let afterPack enforce the 2.31 floor.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # Build on the established Linux release rail to preserve its glibc floor;
+      # install the resulting package on Fedora below.
+      - uses: pnpm/setup@v2
+        with:
+          install: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            mobile/pnpm-lock.yaml
+      - name: Prepare Linux native builds
+        run: |
+          npm install -g node-gyp@11.5.0
+          echo "npm_config_node_gyp=$(npm root -g)/node-gyp/bin/node-gyp.js" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y python3-gi gir1.2-atspi-2.0 at-spi2-core xclip xdotool rpm
+      - name: Install desktop dependencies
+        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/install-mobile-dependencies
+      - name: Build desktop and Fedora package
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          pnpm run build:release
+          pnpm exec electron-builder --config config/electron-builder.config.cjs --linux rpm --x64 --publish never
+      - name: Install RPM on Fedora
+        run: |
+          docker run --rm --volume "$PWD/dist:/artifacts:ro" fedora:44 bash -euo pipefail -c '
+            dnf -y install /artifacts/veer-*.x86_64.rpm
+            rpm -q orca-ide
+            test -x /opt/Veer/orca-ide
+            test "$(cat /opt/Veer/resources/package-type)" = rpm
+            command -v orca-ide
+          '
+      - uses: actions/upload-artifact@v7
+        with:
+          name: veer-fedora-x86_64-${{ github.sha }}
+          path: dist/veer-*.x86_64.rpm
+          if-no-files-found: error
+          retention-days: 7

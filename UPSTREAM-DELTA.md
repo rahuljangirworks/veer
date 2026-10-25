@@ -122,6 +122,44 @@ The procedure for updating this file is
   `/api/updates/check?version=1.4.178&platform=linux` returned HTTP 200 there
   before the workflow change. Rerun the backend monitor after pushing.
 
+## 2026-10-25 — Temporary Fedora-only desktop build mode
+
+- Veer's active desktop artifact is the x86_64 RPM. The dedicated
+  `.github/workflows/fedora-rpm.yml` builds only that target from `dev` and
+  matching pull requests, installs it in a Fedora 44 container, and uploads
+  the RPM as a short-lived Actions artifact. It does not tag, publish, or
+  deploy a release. Package on Ubuntu 22.04, then enforce the 2.31 glibc
+  floor before the Fedora install check. `ubuntu-latest` linked three bundled
+  node-pty binaries against GLIBC_2.42 and failed that guard in the first PR
+  run; do not silence the guard to make the RPM build green.
+- The Fedora install smoke caught a stale postinstall directory list: product
+  files now live under `/opt/Veer`, but the PATH symlink and sandbox repair
+  searched only legacy `/opt/Orca` names. Keep `/opt/Veer` in both package
+  lifecycle scripts; removing it breaks `orca-ide` on Fedora after install.
+- The daily `node-next-compat.yml` x86 sweep had broad, pre-existing fork test
+  drift unrelated to RPM packaging. Its schedule is paused; manual dispatch
+  remains for later repair. The skill round-trip workflow runs its pinned and
+  latest CLI checks on Linux only while macOS/Windows builds are paused.
+- Veer PR routing sets the old AppImage/DEB/RPM package lane and Windows package
+  lane to `false`, matching the required aggregate's skip logic. The separate
+  Fedora RPM workflow supplies package evidence. Set repository variable
+  `VEER_CROSS_PLATFORM_PACKAGES=true` to restore the old PR package lanes.
+- The fork's PR aggregate fell into a queued state on upstream Blacksmith runner
+  labels. Its jobs now use GitHub-hosted Ubuntu 24.04/22.04 on Veer, while
+  upstream keeps Blacksmith. Keep this fork-specific runner fallback when
+  syncing `pr.yml`; otherwise PR checks cannot exercise the Fedora change.
+- The required PR preflight also exposed localization drift in this fork:
+  restore missing Veer English keys with `pnpm run sync:localization-catalog`,
+  regenerate `en-runtime-required.json` with
+  `pnpm run sync:localization-runtime-catalog`, and remove obsolete target
+  locale keys. Run `bun config/scripts/verify-localization-catalogs.mjs` and
+  `bun config/scripts/audit-localization-coverage.mjs --check` before pushing.
+- The coupled `release-cut.yml` pipeline requires Windows, macOS, AppImage,
+  DEB, and RPM assets before publication. Do not delete its matrix rows to
+  create an RPM-only release: that would strand a draft. Restore that release
+  pipeline only when the other platforms are ready. The upstream-only hourly,
+  daily, and ad hoc Mac workflows already skip on Rahul's fork.
+
 ## Intentional Veer areas to re-check on every sync
 
 - Veer product and CLI branding, including the canonical `veer` launcher and

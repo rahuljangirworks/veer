@@ -567,25 +567,6 @@
         "linear": {
           "37d36984d0": "La conexión de Linear fue reemplazada por una solicitud más reciente."
         },
-        "veer": {
-          "profiles": {
-            "612f7f6861": "Error al crear perfil",
-            "319d7cf39b": "Perfil en la nube creado",
-            "d6e764e7db": "Reconectar este perfil",
-            "f0c9e11a6d": "Error al crear perfil en la nube",
-            "8b8fa73174": "El inicio de sesión de Veer Cloud no está configurado",
-            "33290e88ed": "Error al conectar perfil",
-            "9fcb07a796": "Perfil conectado",
-            "2f6c78a039": "Error al actualizar autenticación del perfil",
-            "a37b5e6d37": "Sesión cerrada del perfil",
-            "83600521e7": "Error al cerrar sesión",
-            "76deec8f58": "Error al cambiar organización",
-            "7d4bc516ee": "Error al cambiar perfil",
-            "f518e89aa5": "El proyecto ya existe en ese perfil",
-            "f03ae7f27b": "Error al transferir proyecto",
-            "signInTimedOut": "Se agotó el tiempo de inicio de sesión"
-          }
-        },
         "runtime": {
           "status": {
             "runtimeHostDisconnectedDescription": "Compruebe que Veer se está ejecutando en este servidor y que su conexión de red está funcionando, a continuación, inténtelo de nuevo.",
@@ -3423,7 +3404,6 @@
             "switchTerminal": "terminal de interruptor",
             "openTaskTerminal": "Abrir terminal de tareas",
             "systemBrowser": "Navegador del sistema",
-            "veerBrowser": "Navegador Veer",
             "terminalLinkSettings": "Configuración de enlace de terminal",
             "copyLink": "Copiar enlace",
             "copied": "Copiado",
@@ -8375,7 +8355,6 @@
           "versionUnavailable": "Veer version unavailable",
           "updateServer": "Update",
           "reviewServerUpdates": "Server updates",
-          "veerVersion": "Veer v{{value0}}",
           "removeActiveServerBlocked": "Este servidor es el host predeterminado para proyectos nuevos. Elige otro en Avanzado antes de eliminarlo.",
           "removeActiveServerDescription": "Este servidor es el host predeterminado para proyectos nuevos. Elige otro en Avanzado antes de eliminarlo. Las sesiones existentes del host no se modifican.",
           "updatingServers": "Updating servers…",
@@ -8400,8 +8379,7 @@
           "serverReconnecting": "Reconectando",
           "accessRevoked": "{{value0}} no longer accepts this computer. Re-pair it with a new access link.",
           "repair": "Re-pair…",
-          "serverAccessRevoked": "Access revoked",
-          "veerVersionLastSeen": "Veer v{{value0}} (last seen)"
+          "serverAccessRevoked": "Access revoked"
         },
         "RuntimePairingGeneratedUrlRows": {
           "0495f68959": "Copiar {{value0}}"
@@ -11445,13 +11423,6 @@
           "notificationPlayground": "Panel de prueba de notificaciones",
           "notificationPlaygroundDescription": "Disparadores solo para desarrollo para comprobar el diseño de toasts, acciones de recuperación y ajuste de texto largo.",
           "devOnly": "Solo para desarrollo",
-          "veerCloud": "Veer Cloud",
-          "veerCloudDescription": "Vista previa solo para desarrolladores del inicio de sesión de la nube propia. Oculto en producción; en desarrollo también aparece en el selector de cuentas de la barra lateral cuando se configuran ORCA_CLOUD_API_URL y ORCA_CLOUD_CLIENT_ID.",
-          "veerCloudStatus": "Estado",
-          "veerCloudSignOut": "Cerrar sesión",
-          "veerCloudConnect": "Conectar perfil",
-          "veerCloudRefresh": "Actualizar estado",
-          "veerCloudNotConfigured": "Configura ORCA_CLOUD_API_URL y ORCA_CLOUD_CLIENT_ID para previsualizar el inicio de sesión de Veer Cloud en esta versión de desarrollo.",
           "deleteAnywayClicked": "Eliminar de todos modos hecho clic"
         },
         "EphemeralVmRecipeRow": {
@@ -12194,34 +12165,6 @@
           "keywordHtml": "HTML",
           "keywordMarkdown": "Markdown",
           "keywordUpload": "subir"
-        },
-        "veerAccount": {
-          "keywordLogin": "acceso",
-          "connected": "Conectado",
-          "keywordCloud": "nube",
-          "account": "cuenta Veer",
-          "signInAgain": "Iniciar sesión nuevamente",
-          "signIn": "Iniciar sesión en Veer",
-          "reconnectRequired": "Tu sesión expiró. Inicie sesión nuevamente para utilizar las funciones de la nube.",
-          "unavailable": "El inicio de sesión de Veer no está disponible en esta compilación.",
-          "signedOut": "Inicie sesión para ampliar Veer con funciones en la nube, incluidos Artifacts y Veer Relay.",
-          "checking": "Comprobando el estado de la cuenta...",
-          "signOut": "desconectar",
-          "title": "Cuenta Veer",
-          "description": "Comparte tu trabajo al instante y accede a tu escritorio desde Veer Mobile estés donde estés.",
-          "searchDescription": "Iniciar o cerrar sesión en la cuenta utilizada por Artifacts y Veer Relay.",
-          "benefitsTitle": "Incluido con tu cuenta",
-          "artifactsTitle": "Compartir artefactos",
-          "artifactsDescription": "Publique archivos HTML y Markdown, luego administre cada enlace compartido desde Veer.",
-          "relayTitle": "Relevo de Veer",
-          "relayDescription": "Conecte Veer Mobile a esta computadora de escritorio a través de celular o cualquier Wi-Fi.",
-          "skillsTitle": "Compartir habilidades",
-          "skillsDescription": "Comparta una habilidad o un conjunto completo detrás de un enlace no listado e instálelas en cualquier máquina que utilice.",
-          "keywordAccount": "cuenta",
-          "keywordLogout": "cerrar sesión",
-          "keywordSignIn": "iniciar sesión",
-          "keywordSignOut": "desconectar",
-          "keywordRelay": "relé"
         },
         "automations": {
           "title": "Automatizaciones",
@@ -17334,10 +17277,6 @@
               "preview": "Vista previa",
               "title": "¿Abrir enlaces del terminal en el navegador de Veer?",
               "description": "Usa el navegador de Veer para los enlaces del terminal o conserva tu navegador del sistema.",
-              "veer": {
-                "button": "Abrir en Veer",
-                "note": "Veer puede usar cookies importadas para sitios con sesión iniciada."
-              },
               "settings": {
                 "note": "Cámbialo después en Configuración → Navegador."
               },
@@ -17355,10 +17294,7 @@
               },
               "keep": {
                 "title": "¿Mantener los enlaces del terminal en el navegador de Veer?",
-                "description": "O usa tu navegador del sistema de forma predeterminada.",
-                "veer": {
-                  "button": "Mantener Veer"
-                }
+                "description": "O usa tu navegador del sistema de forma predeterminada."
               }
             }
           }
@@ -17525,18 +17461,6 @@
       "nativeChat": {
         "contextMenu": {
           "copy": "Copiar"
-        }
-      },
-      "veer": {
-        "profiles": {
-          "signout": {
-            "confirm": {
-              "title": "¿Cerrar sesión en Veer?",
-              "description": "Se cerrará tu sesión de Veer en este dispositivo. Tus proyectos y worktrees locales no se verán afectados.",
-              "cancel": "Cancelar",
-              "action": "Cerrar sesión"
-            }
-          }
         }
       },
       "linear-issue-attribute-filter-dropdowns": {
@@ -18042,10 +17966,7 @@
       },
       "reasoning": "Razonamiento",
       "contextMenu": {
-        "copyOrcaSessionId": "Copiar ID de sesión de Veer",
-        "veerSessionIdCopied": "ID de sesión de Veer copiado",
-        "veerSessionIdCopyFailed": "No se pudo copiar el ID de sesión de Veer",
-        "veerSessionIdTooltip": "El ID de Veer para este chat, distinto del ID de sesión propio de la CLI del agente. Los agentes lo usan para referirse entre sí a través de Veer."
+        "copyOrcaSessionId": "Copiar ID de sesión de Veer"
       },
       "failureWords": {
         "theAgent": "El agente",
@@ -18666,13 +18587,7 @@
         "historyItemTooLarge": "Esta parte del chat era demasiado grande para mostrarla.",
         "stoppedBeforeStart": "Detenido manualmente",
         "dismiss": "Descartar",
-        "copyError": "Copiar error",
-        "veerStopUpdate": "Veer en {{machine}} se reinició para actualizarse mientras esta respuesta estaba en curso.",
-        "veerStopQuit": "Veer en {{machine}} se cerró mientras esta respuesta estaba en curso.",
-        "veerStopCrash": "Veer en {{machine}} se detuvo inesperadamente mientras esta respuesta estaba en curso.",
-        "veerStopRemote": "Veer en {{machine}} se detuvo mientras esta respuesta estaba en curso.",
-        "veerStopCanContinue": "Puedes continuar en esta conversación.",
-        "veerStopUnnamedServer": "el servidor remoto"
+        "copyError": "Copiar error"
       },
       "providerFrame": {
         "byteLength": "{{value0}} bytes"
