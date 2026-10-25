@@ -132,6 +132,10 @@ The procedure for updating this file is
   floor before the Fedora install check. `ubuntu-latest` linked three bundled
   node-pty binaries against GLIBC_2.42 and failed that guard in the first PR
   run; do not silence the guard to make the RPM build green.
+- The Fedora install smoke caught a stale postinstall directory list: product
+  files now live under `/opt/Veer`, but the PATH symlink and sandbox repair
+  searched only legacy `/opt/Orca` names. Keep `/opt/Veer` in both package
+  lifecycle scripts; removing it breaks `orca-ide` on Fedora after install.
 - The daily `node-next-compat.yml` x86 sweep had broad, pre-existing fork test
   drift unrelated to RPM packaging. Its schedule is paused; manual dispatch
   remains for later repair. The skill round-trip workflow runs its pinned and
