@@ -148,6 +148,12 @@ The procedure for updating this file is
   labels. Its jobs now use GitHub-hosted Ubuntu 24.04/22.04 on Veer, while
   upstream keeps Blacksmith. Keep this fork-specific runner fallback when
   syncing `pr.yml`; otherwise PR checks cannot exercise the Fedora change.
+- The required PR preflight also exposed localization drift in this fork:
+  restore missing Veer English keys with `pnpm run sync:localization-catalog`,
+  regenerate `en-runtime-required.json` with
+  `pnpm run sync:localization-runtime-catalog`, and remove obsolete target
+  locale keys. Run `bun config/scripts/verify-localization-catalogs.mjs` and
+  `bun config/scripts/audit-localization-coverage.mjs --check` before pushing.
 - The coupled `release-cut.yml` pipeline requires Windows, macOS, AppImage,
   DEB, and RPM assets before publication. Do not delete its matrix rows to
   create an RPM-only release: that would strand a draft. Restore that release
