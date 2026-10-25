@@ -128,9 +128,10 @@ The procedure for updating this file is
   `.github/workflows/fedora-rpm.yml` builds only that target from `dev` and
   matching pull requests, installs it in a Fedora 44 container, and uploads
   the RPM as a short-lived Actions artifact. It does not tag, publish, or
-  deploy a release. Keep the build on the existing Ubuntu Linux rail so its
-  native binaries still pass the glibc-floor guard before the Fedora install
-  check.
+  deploy a release. Package on Ubuntu 22.04, then enforce the 2.31 glibc
+  floor before the Fedora install check. `ubuntu-latest` linked three bundled
+  node-pty binaries against GLIBC_2.42 and failed that guard in the first PR
+  run; do not silence the guard to make the RPM build green.
 - The daily `node-next-compat.yml` x86 sweep had broad, pre-existing fork test
   drift unrelated to RPM packaging. Its schedule is paused; manual dispatch
   remains for later repair. The skill round-trip workflow runs its pinned and

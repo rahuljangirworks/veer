@@ -32,7 +32,9 @@ concurrency:
 jobs:
   rpm:
     name: Fedora x86_64 RPM
-    runs-on: ubuntu-latest
+    # The current ubuntu-latest image builds node-pty against GLIBC_2.42.
+    # Keep the packaging host older and let afterPack enforce the 2.31 floor.
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v6
