@@ -8,11 +8,12 @@ import { normalizeMobileDiffComments } from './mobile-diff-comments'
 import { buildMobileDiffHunks } from './mobile-diff-hunks'
 import { highlightMobileDiffLines, resolveMobileSyntaxLanguage } from './mobile-file-syntax'
 import {
-  readMobileBranchCompareResult,
-  readMobileGitStatusResult,
-  readMobileReviewGitDiffResult,
-  readMobileReviewWorktreeMetadata
-} from './mobile-diff-review-rpc'
+  reviewBranchCompareRead,
+  reviewBranchFileDiffRead,
+  reviewFileDiffRead,
+  reviewWorktreeMetadataRead
+} from './mobile-diff-review-operations'
+import { gitStatusProjectionRead } from '../source-control/mobile-git-read-operations'
 import {
   canOpenMobileBranchCompareDiff,
   type MobileGitBranchCompareResult
@@ -45,7 +46,7 @@ export async function loadMobileDiffReviewBranchCompare(
     if (!baseRef) {
       return { result: null }
     }
-    const response = await client.sendRequest('git.branchCompare', {
+    const response = await reviewBranchCompareRead.request(client, {
       worktree: `id:${worktreeId}`,
       baseRef
     })
@@ -55,10 +56,7 @@ export async function loadMobileDiffReviewBranchCompare(
       }
       return { result: null, error: response.error?.message || 'Committed changes unavailable' }
     }
-    const parsed = readMobileBranchCompareResult(response.result)
-    return parsed
-      ? { result: parsed }
-      : { result: null, error: 'Committed changes response was invalid' }
+    return { result: reviewBranchCompareRead.interpret(response) }
   } catch (err) {
     return { result: null, error: err instanceof Error ? err.message : 'Committed changes failed' }
   }
@@ -68,32 +66,34 @@ export async function loadMobileDiffReviewSnapshot(
   client: RpcClient,
   worktreeId: string
 ): Promise<ReviewScreenState> {
-  const statusResponse = await client.sendRequest('git.status', { worktree: `id:${worktreeId}` })
+  const statusResponse = await gitStatusProjectionRead.request(client, {
+    worktree: `id:${worktreeId}`
+  })
   if (!statusResponse.ok) {
     if (isMobileGitUnavailable(statusResponse.error?.code, statusResponse.error?.message)) {
       return { kind: 'unavailable', message: 'Update Veer desktop to review changes on mobile.' }
     }
     throw new Error(statusResponse.error?.message || 'Unable to load changes')
   }
-  const status = readMobileGitStatusResult(statusResponse.result)
+  const status = gitStatusProjectionRead.interpret(statusResponse)
   if (!status) {
     throw new Error('Source control response was invalid')
   }
 
   const [branch, worktreeResponse] = await Promise.all([
     loadMobileDiffReviewBranchCompare(client, worktreeId),
-    client.sendRequest('worktree.show', { worktree: `id:${worktreeId}` })
+    reviewWorktreeMetadataRead.request(client, { worktree: `id:${worktreeId}` })
   ])
   if (!worktreeResponse.ok) {
     throw new Error(worktreeResponse.error?.message || 'Unable to load review notes')
   }
 
-  const metadata = readMobileReviewWorktreeMetadata(worktreeResponse.result)
+  const metadata = reviewWorktreeMetadataRead.interpret(worktreeResponse)
   const comments = normalizeMobileDiffComments(metadata.diffComments, worktreeId)
   const normalizedReviewState = normalizeMobileDiffReviewState(metadata.mobileDiffReview)
   const branchEntries =
     branch.result && canOpenMobileBranchCompareDiff(branch.result.summary)
-      ? branch.result.entries
+      ? (branch.result.entries ?? [])
       : []
   const queue = buildMobileDiffReviewQueue({
     worktreeId,
@@ -124,7 +124,7 @@ export async function loadMobileDiffReviewDiff(input: DiffLoadInput): Promise<Re
   const response =
     item.scope === 'branch'
       ? await loadBranchFileDiff(client, worktreeId, item, branchCompare)
-      : await client.sendRequest('git.diff', {
+      : await reviewFileDiffRead.request(client, {
           worktree: `id:${worktreeId}`,
           filePath: item.filePath,
           staged: item.scope === 'staged'
@@ -138,10 +138,10 @@ export async function loadMobileDiffReviewDiff(input: DiffLoadInput): Promise<Re
     }
     throw new Error(response.error?.message || 'Unable to load diff')
   }
-  const result = readMobileReviewGitDiffResult(response.result)
-  if (!result) {
-    throw new Error('Diff response was invalid')
-  }
+  const result =
+    item.scope === 'branch'
+      ? reviewBranchFileDiffRead.interpret(response)
+      : reviewFileDiffRead.interpret(response)
   if (result.kind === 'binary') {
     return { kind: 'binary', itemKey: item.key }
   }
@@ -169,7 +169,7 @@ async function loadBranchFileDiff(
   if (!summary || !summary.headOid || !summary.mergeBase) {
     throw new Error('Committed diff is unavailable')
   }
-  return client.sendRequest('git.branchDiff', {
+  return reviewBranchFileDiffRead.request(client, {
     worktree: `id:${worktreeId}`,
     filePath: item.filePath,
     ...(item.oldPath ? { oldPath: item.oldPath } : {}),

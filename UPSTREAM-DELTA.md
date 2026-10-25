@@ -139,6 +139,10 @@ The procedure for updating this file is
   lane to `false`, matching the required aggregate's skip logic. The separate
   Fedora RPM workflow supplies package evidence. Set repository variable
   `VEER_CROSS_PLATFORM_PACKAGES=true` to restore the old PR package lanes.
+- The fork's PR aggregate fell into a queued state on upstream Blacksmith runner
+  labels. Its jobs now use GitHub-hosted Ubuntu 24.04/22.04 on Veer, while
+  upstream keeps Blacksmith. Keep this fork-specific runner fallback when
+  syncing `pr.yml`; otherwise PR checks cannot exercise the Fedora change.
 - The coupled `release-cut.yml` pipeline requires Windows, macOS, AppImage,
   DEB, and RPM assets before publication. Do not delete its matrix rows to
   create an RPM-only release: that would strand a draft. Restore that release
