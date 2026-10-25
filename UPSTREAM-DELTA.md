@@ -122,6 +122,29 @@ The procedure for updating this file is
   `/api/updates/check?version=1.4.178&platform=linux` returned HTTP 200 there
   before the workflow change. Rerun the backend monitor after pushing.
 
+## 2026-10-25 — Temporary Fedora-only desktop build mode
+
+- Veer's active desktop artifact is the x86_64 RPM. The dedicated
+  `.github/workflows/fedora-rpm.yml` builds only that target from `dev` and
+  matching pull requests, installs it in a Fedora 44 container, and uploads
+  the RPM as a short-lived Actions artifact. It does not tag, publish, or
+  deploy a release. Keep the build on the existing Ubuntu Linux rail so its
+  native binaries still pass the glibc-floor guard before the Fedora install
+  check.
+- The daily `node-next-compat.yml` x86 sweep had broad, pre-existing fork test
+  drift unrelated to RPM packaging. Its schedule is paused; manual dispatch
+  remains for later repair. The skill round-trip workflow runs its pinned and
+  latest CLI checks on Linux only while macOS/Windows builds are paused.
+- Veer PR routing sets the old AppImage/DEB/RPM package lane and Windows package
+  lane to `false`, matching the required aggregate's skip logic. The separate
+  Fedora RPM workflow supplies package evidence. Set repository variable
+  `VEER_CROSS_PLATFORM_PACKAGES=true` to restore the old PR package lanes.
+- The coupled `release-cut.yml` pipeline requires Windows, macOS, AppImage,
+  DEB, and RPM assets before publication. Do not delete its matrix rows to
+  create an RPM-only release: that would strand a draft. Restore that release
+  pipeline only when the other platforms are ready. The upstream-only hourly,
+  daily, and ad hoc Mac workflows already skip on Rahul's fork.
+
 ## Intentional Veer areas to re-check on every sync
 
 - Veer product and CLI branding, including the canonical `veer` launcher and

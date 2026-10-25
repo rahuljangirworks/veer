@@ -50,8 +50,10 @@ jobs:
       orcad_browser: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.orcad_browser }}
       cross-version-wire: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.cross-version-wire }}
       managed_hook_node18: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.managed_hook_node18 }}
-      package: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.package }}
-      package_windows: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.package_windows }}
+      # Veer packages only the Fedora RPM in fedora-rpm.yml for now. Keep the
+      # original package lanes available through a repository variable.
+      package: ${{ (github.repository != 'rahuljangirworks/veer' || vars.VEER_CROSS_PLATFORM_PACKAGES == 'true') && steps.readiness.outputs.reused != 'true' && steps.filter.outputs.package }}
+      package_windows: ${{ (github.repository != 'rahuljangirworks/veer' || vars.VEER_CROSS_PLATFORM_PACKAGES == 'true') && steps.readiness.outputs.reused != 'true' && steps.filter.outputs.package_windows }}
       layout_oracle: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.layout_oracle }}
       dependency_isolation: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.dependency_isolation }}
       e2e_should_run: ${{ steps.e2e_filter.outputs.should_run }}

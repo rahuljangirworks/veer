@@ -38,7 +38,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        # Restore macOS/Windows when those desktop targets resume.
+        os: [ubuntu-latest]
         # Why: `pinned` runs the skills CLI version Orca ships (SKILLS_CLI_VERSION).
         skills-cli: [pinned]
         include:
