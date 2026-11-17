@@ -48,7 +48,9 @@ function makeSettings(voiceEnabled?: boolean): GlobalSettings {
 }
 
 function installWindowApi(
-  requestMicrophonePermission: () => Promise<DeveloperPermissionRequestResult>
+  requestMicrophonePermission: () => Promise<DeveloperPermissionRequestResult>,
+  stalePiperBridge = false,
+  staleVoiceMain = false
 ) {
   Object.assign(window, {
     api: {
@@ -58,6 +60,18 @@ function installWindowApi(
       speech: {
         getCatalog: vi.fn(async () => EMPTY_SPEECH_CATALOG),
         getOpenAiApiKeyStatus: vi.fn(async () => ({ configured: false })),
+        getVoiceSetupStatus: vi.fn(async () => ({
+          voiceSetupVersion: stalePiperBridge || staleVoiceMain ? undefined : 2,
+          keyConfigured: false,
+          savedKeyConfigured: false,
+          piperInstalled: false,
+          piperModelDir: '/tmp/test-piper',
+          endpointError: 'Set the OmniRoute URL in Voice settings.'
+        })),
+        saveVoiceKey: vi.fn(async () => undefined),
+        clearVoiceKey: vi.fn(async () => undefined),
+        installPiperModel: stalePiperBridge ? undefined : vi.fn(async () => undefined),
+        onPiperInstallProgress: stalePiperBridge ? undefined : vi.fn(() => () => {}),
         saveOpenAiApiKey: vi.fn(async () => ({ configured: true })),
         clearOpenAiApiKey: vi.fn(async () => ({ configured: false })),
         onDownloadProgress: vi.fn(() => () => {}),
@@ -73,6 +87,8 @@ async function renderVoicePane(args: {
   updateSettings: (updates: Partial<GlobalSettings>) => void
   requestMicrophonePermission?: () => Promise<DeveloperPermissionRequestResult>
   recordFeatureInteraction?: (id: string) => void
+  stalePiperBridge?: boolean
+  staleVoiceMain?: boolean
 }): Promise<{
   button: HTMLButtonElement
   root: Root
@@ -89,7 +105,11 @@ async function renderVoicePane(args: {
     })
   )
   useShortcutLabelMock.mockReturnValue('Ctrl+Shift+Y')
-  installWindowApi(args.requestMicrophonePermission ?? vi.fn(async () => deniedMicrophoneResult))
+  installWindowApi(
+    args.requestMicrophonePermission ?? vi.fn(async () => deniedMicrophoneResult),
+    args.stalePiperBridge,
+    args.staleVoiceMain
+  )
 
   const container = document.createElement('div')
   document.body.appendChild(container)
@@ -126,6 +146,38 @@ describe('VoicePane', () => {
   beforeEach(() => {
     useAppStoreMock.mockReset()
     useShortcutLabelMock.mockReset()
+  })
+
+  it('keeps Settings open when the running preload lacks Piper installer methods', async () => {
+    const { container, root } = await renderVoicePane({
+      voiceEnabled: true,
+      stalePiperBridge: true,
+      markFeatureTipsSeen: vi.fn(),
+      updateSettings: vi.fn()
+    })
+
+    expect(container.textContent).toContain('Restart Veer to load the updated voice settings.')
+    expect(
+      container.querySelector<HTMLButtonElement>('button[aria-label="Voice conversation"]')
+    ).toBeTruthy()
+    expect(
+      [...container.querySelectorAll('button')].find(
+        (button) => button.textContent === 'Install Piper'
+      )?.disabled
+    ).toBe(true)
+    act(() => root.unmount())
+  })
+
+  it('asks for a restart when the preload is current but the main process is old', async () => {
+    const { container, root } = await renderVoicePane({
+      voiceEnabled: true,
+      staleVoiceMain: true,
+      markFeatureTipsSeen: vi.fn(),
+      updateSettings: vi.fn()
+    })
+
+    expect(container.textContent).toContain('Restart Veer to load the updated voice settings.')
+    act(() => root.unmount())
   })
 
   it('fetches speech data once across re-renders when voice settings are absent', async () => {

@@ -599,7 +599,9 @@ jobs:
       needs.code_paths.result == 'success' &&
       needs.code_paths.outputs.git_compatibility == 'true' &&
       needs.preflight.result == 'success'
-    runs-on: ubuntu-latest
+    # Git 2.25.5 uses `thread_local` as an identifier; GCC 15 on ubuntu-latest
+    # treats it as a keyword and cannot build the compatibility baseline.
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
@@ -1074,9 +1076,38 @@ jobs:
           DIFF_BASE="$(node config/scripts/git-pull-request-diff-base.mjs "$BASE_SHA")"
           pnpm run check:runtime-launcher-protocol-ratchet -- --base "$DIFF_BASE"
 
+      # Veer's fork has only its own release tags. The fixtures below exercise
+      # the named upstream releases, while the daemon gate above keeps Veer's tag.
+      - name: Fetch upstream wire compatibility fixtures on Veer
+        if: github.repository == 'rahuljangirworks/veer'
+        run: |
+          git fetch --no-tags --depth=1 https://github.com/stablyai/orca.git \
+            +refs/tags/v1.4.169:refs/tags/v1.4.169 \
+            +refs/tags/v1.4.175:refs/tags/v1.4.175 \
+            +refs/tags/v1.4.176:refs/tags/v1.4.176 \
+            +refs/tags/v1.4.177:refs/tags/v1.4.177 \
+            +refs/tags/v1.4.184:refs/tags/v1.4.184 \
+            +refs/tags/v1.4.185:refs/tags/v1.4.185 \
+            +refs/tags/v1.4.190:refs/tags/v1.4.190 \
+            +refs/tags/v1.4.199:refs/tags/v1.4.199 \
+            +refs/tags/v1.4.205:refs/tags/v1.4.205 \
+            +refs/tags/v1.4.211:refs/tags/v1.4.211 \
+            +refs/tags/v1.4.212:refs/tags/v1.4.212 \
+            +refs/tags/v1.4.214:refs/tags/v1.4.214 \
+            +refs/tags/v1.4.218:refs/tags/v1.4.218 \
+            +refs/tags/v1.4.219:refs/tags/v1.4.219 \
+            +refs/tags/v1.4.220:refs/tags/v1.4.220 \
+            +refs/tags/v1.4.221:refs/tags/v1.4.221 \
+            +refs/tags/v1.4.222:refs/tags/v1.4.222 \
+            +refs/tags/v1.4.224:refs/tags/v1.4.224 \
+            +refs/tags/v1.4.228:refs/tags/v1.4.228
+
       # Runs the whole directory so a new file there cannot be left out; an empty match
       # exits 1 ("No test files found"), so this lane cannot pass while running zero tests.
       - name: Old/new client and server compatibility journeys
+        env:
+          # This is the first tagged upstream build with all modules these journeys read.
+          ORCA_CROSS_VERSION_BASELINE_REF: ${{ github.repository == 'rahuljangirworks/veer' && 'v1.4.228' || '' }}
         run: pnpm exec vitest run --config config/vitest.config.ts tests/e2e/cross-version-wire/
 
   managed_hook_node18:

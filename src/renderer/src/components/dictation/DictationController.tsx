@@ -15,6 +15,7 @@ import { showDictationStartErrorToast } from './dictation-start-error-toast'
 import { useHoldDictationGesture } from './use-hold-dictation-gesture'
 import { DICTATION_CONTROL_EVENT, type DictationControlAction } from './dictation-control-events'
 import { publishDictationMeter } from './dictation-meter-store'
+import { VoiceSession, startSpeechDictation, suppressConversationTranscript } from '@/veer/voice'
 
 export function DictationController() {
   const dictationState = useAppStore((s) => s.dictationState)
@@ -184,7 +185,7 @@ export function DictationController() {
         return
       }
 
-      await window.api.speech.startDictation(modelId, undefined, sessionId)
+      await startSpeechDictation(modelId, sessionId, settings?.voice?.conversation === true)
       if (dictationRunRef.current !== runId) {
         discardBufferedAudio()
         insertionTargetRef.current = null
@@ -363,6 +364,9 @@ export function DictationController() {
       if (data.sessionId !== activeSessionIdRef.current || !data.text) {
         return
       }
+      if (suppressConversationTranscript(setPartialTranscript, finalTranscriptReceivedRef)) {
+        return
+      }
       setPartialTranscript('')
       finalTranscriptReceivedRef.current = true
       const target = insertionTargetRef.current
@@ -428,5 +432,10 @@ export function DictationController() {
     }
   }, [setPartialTranscript, setDictationState, stopCapture, discardBufferedAudio])
 
-  return <DictationIndicator />
+  return (
+    <>
+      <DictationIndicator />
+      <VoiceSession />
+    </>
+  )
 }

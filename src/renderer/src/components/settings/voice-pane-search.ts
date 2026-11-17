@@ -2,6 +2,7 @@ import type { SettingsSearchEntry } from './settings-search'
 import { translate } from '@/i18n/i18n'
 import { translateSearchKeyword } from './settings-search-keywords'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
+import { getVoiceConversationSearchEntry } from '@/veer/voice/voice-conversation-search'
 
 export const getOpenaiTranscriptionSearchEntry = createLocalizedCatalog(
   (): SettingsSearchEntry => ({
@@ -73,6 +74,7 @@ export const getVoicePaneSearchEntries = createLocalizedCatalog(() => [
       )
     ]
   },
+  getVoiceConversationSearchEntry(),
   {
     title: translate('auto.components.settings.voice.pane.search.microphoneTitle', 'Microphone'),
     description: translate(

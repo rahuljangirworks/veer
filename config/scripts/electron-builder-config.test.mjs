@@ -443,6 +443,16 @@ describe('electron-builder config', () => {
     expect(electronBuilderConfig.linux.icon).toBe('resources/build/icon.icns')
   })
 
+  it('ships the Veer Linux CLI and its legacy launcher alias', () => {
+    expect(electronBuilderConfig.linux.extraResources).toEqual(
+      expect.arrayContaining([
+        { from: 'resources/linux/bin/veer-ide', to: 'bin/veer-ide' },
+        { from: 'resources/linux/bin/veer-ide', to: 'bin/veer' },
+        { from: 'resources/linux/bin/orca-ide', to: 'bin/orca-ide' }
+      ])
+    )
+  })
+
   it('matches the Linux desktop entry to Electron window class', () => {
     expect(electronBuilderConfig.linux.desktop.entry.StartupWMClass).toBe('orca')
   })

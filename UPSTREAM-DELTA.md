@@ -140,6 +140,10 @@ The procedure for updating this file is
   drift unrelated to RPM packaging. Its schedule is paused; manual dispatch
   remains for later repair. The skill round-trip workflow runs its pinned and
   latest CLI checks on Linux only while macOS/Windows builds are paused.
+- The WSL orcad E2E template is paused on Veer's automatic PR runs; its
+  `ubuntu-latest` native binary exceeds the glibc floor and the Windows lane
+  is outside the current Fedora target. Manual dispatch still works, and
+  `VEER_WSL_E2E=true` restores automatic runs when that lane is repaired.
 - Veer PR routing sets the old AppImage/DEB/RPM package lane and Windows package
   lane to `false`, matching the required aggregate's skip logic. The separate
   Fedora RPM workflow supplies package evidence. Set repository variable
@@ -154,6 +158,13 @@ The procedure for updating this file is
   `pnpm run sync:localization-runtime-catalog`, and remove obsolete target
   locale keys. Run `bun config/scripts/verify-localization-catalogs.mjs` and
   `bun config/scripts/audit-localization-coverage.mjs --check` before pushing.
+- The required Git 2.25.5 compatibility job builds from source on Ubuntu 22.04.
+  Newer `ubuntu-latest` GCC treats its `thread_local` identifier as a keyword;
+  keep the older build host until that pinned Git contract changes.
+- Historical relay and wire compatibility checks need upstream release tags
+  that the Veer fork does not have. Fetch only their pinned tags from
+  `https://github.com/stablyai/orca.git` in the affected PR jobs; do not use an
+  unbounded tag fetch or copy those tags into Veer's release namespace.
 - The coupled `release-cut.yml` pipeline requires Windows, macOS, AppImage,
   DEB, and RPM assets before publication. Do not delete its matrix rows to
   create an RPM-only release: that would strand a draft. Restore that release

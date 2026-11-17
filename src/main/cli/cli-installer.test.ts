@@ -32,13 +32,15 @@ import { CliInstaller } from './cli-installer'
 import { makeFixture } from './cli-installer-test-fixtures'
 import { resolveAppImageExtractedRoot } from './appimage-extracted-root'
 import { buildLegacyAppImageCliWrapper } from './legacy-appimage-cli-wrapper'
+import { DEV_COMMAND_NAME, PRODUCTION_COMMAND_NAME } from './cli-install-constants'
+import { LINUX_BUNDLED_LAUNCHER_NAME, LINUX_CLI_COMMAND_NAME } from './bundled-cli-launcher-path'
 
 // Stands in for the AppImage runtime's `--appimage-extract`, which writes the
 // payload to ./squashfs-root relative to cwd.
 async function fakeAppImageExtractRunner(_appImagePath: string, cwd: string): Promise<void> {
   const launcherDir = join(cwd, 'squashfs-root', 'resources', 'bin')
   await mkdir(launcherDir, { recursive: true })
-  await writeFile(join(launcherDir, 'orca-ide'), '#!/usr/bin/env bash\n', {
+  await writeFile(join(launcherDir, LINUX_CLI_COMMAND_NAME), '#!/usr/bin/env bash\n', {
     encoding: 'utf8',
     mode: 0o755
   })
@@ -107,7 +109,7 @@ describe('CliInstaller', () => {
 
       const installed = await installer.install()
       expect(installed.state).toBe('installed')
-      expect(installed.commandName).toBe('orca-ide')
+      expect(installed.commandName).toBe(PRODUCTION_COMMAND_NAME)
       expect(installed.pathConfigured).toBe(false)
       expect(installed.detail).toContain('.local')
 
@@ -123,7 +125,7 @@ describe('CliInstaller', () => {
   // Why: dev installs are useful for validation, but they must not replace the
   // packaged `orca` / `orca-ide` commands developers rely on day to day.
   it.skipIf(process.platform === 'win32')(
-    'uses a separate orca-dev command for default development installs',
+    'uses a separate Veer development command for default development installs',
     async () => {
       const fixture = await makeFixture()
       const homePath = join(fixture.root, 'home')
@@ -140,12 +142,14 @@ describe('CliInstaller', () => {
 
       const installed = await installer.install()
       expect(installed.state).toBe('installed')
-      expect(installed.commandName).toBe('orca-dev')
-      expect(installed.commandPath).toBe(join(commandDir, 'orca-dev'))
-      expect(installed.launcherPath).toBe(join(fixture.userDataPath, 'cli', 'bin', 'orca-dev'))
+      expect(installed.commandName).toBe(DEV_COMMAND_NAME)
+      expect(installed.commandPath).toBe(join(commandDir, DEV_COMMAND_NAME))
+      expect(installed.launcherPath).toBe(
+        join(fixture.userDataPath, 'cli', 'bin', DEV_COMMAND_NAME)
+      )
       await expect(readlink(installed.commandPath as string)).resolves.toBe(installed.launcherPath)
       await expect(
-        readFile(join(fixture.userDataPath, 'cli', 'bin', 'orca'), 'utf8')
+        readFile(join(fixture.userDataPath, 'cli', 'bin', PRODUCTION_COMMAND_NAME), 'utf8')
       ).resolves.toBe(await readFile(installed.launcherPath as string, 'utf8'))
     }
   )
@@ -185,14 +189,14 @@ describe('CliInstaller', () => {
       const installed = await installer.install()
       expect(installed).toMatchObject({
         state: 'installed',
-        commandName: 'orca-ide',
+        commandName: PRODUCTION_COMMAND_NAME,
         installMethod: 'symlink',
         pathConfigured: true
       })
       // The command target remains stable while its cache endpoint advances generations.
       expect(relative(cacheRootPath, installed.launcherPath as string).split(sep)).toEqual([
         'launcher',
-        'orca-ide'
+        LINUX_CLI_COMMAND_NAME
       ])
       expect(installed.currentTarget).toBe(installed.launcherPath)
       await expect(readlink(installPath)).resolves.toBe(installed.launcherPath)
@@ -312,7 +316,7 @@ describe('CliInstaller', () => {
       const homePath = join(fixture.root, 'home')
       const commandDir = join(homePath, '.local', 'bin')
       const resourcesPath = join(fixture.root, 'resources')
-      const launcherPath = join(resourcesPath, 'bin', 'orca-ide')
+      const launcherPath = join(resourcesPath, 'bin', LINUX_BUNDLED_LAUNCHER_NAME)
       const oldLauncherPath = join(resourcesPath, 'bin', 'orca')
       const legacyCommandPath = join(commandDir, 'orca')
       await mkdir(commandDir, { recursive: true })
@@ -332,7 +336,7 @@ describe('CliInstaller', () => {
       })
 
       const installed = await installer.install()
-      expect(installed.commandPath).toBe(join(commandDir, 'orca-ide'))
+      expect(installed.commandPath).toBe(join(commandDir, LINUX_CLI_COMMAND_NAME))
       await expect(lstat(legacyCommandPath)).rejects.toMatchObject({ code: 'ENOENT' })
     }
   )
@@ -367,7 +371,7 @@ describe('CliInstaller', () => {
       })
 
       const installed = await installer.install()
-      expect(installed.commandPath).toBe(join(commandDir, 'orca-ide'))
+      expect(installed.commandPath).toBe(join(commandDir, LINUX_CLI_COMMAND_NAME))
       await expect(lstat(legacyCommandPath)).rejects.toMatchObject({ code: 'ENOENT' })
     }
   )

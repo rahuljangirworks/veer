@@ -20481,5 +20481,26 @@
       "errorTitle": "Space hit an error.",
       "errorDescription": "Close and reopen Space to try again."
     }
+  },
+  "veer": {
+    "voice": {
+      "conversation": {
+        "description": "Talk with Veer instead of inserting dictated text.",
+        "keyword": {
+          "conversation": "conversation",
+          "endpoint": "endpoint",
+          "omniroute": "OmniRoute",
+          "piper": "Piper",
+          "speak": "speak",
+          "voice": "voice"
+        },
+        "title": "Voice conversation"
+      },
+      "state": {
+        "listening": "Listening",
+        "speaking": "Speaking",
+        "thinking": "Thinking"
+      }
+    }
   }
 }

@@ -4,6 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { credential } from './native-account-test-fixtures'
 import {
+  createAntigravityLinuxCredentialBackend,
+  isAntigravityLinuxSecretServiceReady
+} from './native-linux-credentials'
+import {
   createAntigravityFileCredentialBackend,
   createAntigravityHostCredentialBackend,
   isAntigravityFileStorageHost
@@ -12,6 +16,10 @@ import {
 vi.mock('./native-macos-credentials', () => ({
   readAntigravityMacOSCredential: vi.fn(),
   writeAntigravityMacOSCredential: vi.fn()
+}))
+vi.mock('./native-linux-credentials', () => ({
+  isAntigravityLinuxSecretServiceReady: vi.fn(() => false),
+  createAntigravityLinuxCredentialBackend: vi.fn()
 }))
 afterEach(() => {
   vi.restoreAllMocks()
@@ -75,10 +83,32 @@ describe('execution-host native credential authority', () => {
       ]) {
         vi.stubEnv(key, '')
       }
+      vi.mocked(isAntigravityLinuxSecretServiceReady).mockReturnValue(false)
       vi.spyOn(process, 'platform', 'get').mockReturnValue(platform)
       expect(() => createAntigravityHostCredentialBackend('/task-home')).toThrow(
         'not supported on this host yet'
       )
+      expect(createAntigravityLinuxCredentialBackend).not.toHaveBeenCalled()
     }
   )
+
+  it('uses the Linux Secret Service login collection when it is unlocked', () => {
+    for (const key of [
+      'SSH_TTY',
+      'SSH_CLIENT',
+      'SSH_CONNECTION',
+      'WSL_DISTRO_NAME',
+      'WSL_INTEROP'
+    ]) {
+      vi.stubEnv(key, '')
+    }
+    const backend = { read: vi.fn(), write: vi.fn() }
+    vi.mocked(isAntigravityLinuxSecretServiceReady).mockReturnValue(true)
+    vi.mocked(createAntigravityLinuxCredentialBackend).mockReturnValue(backend)
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
+    expect(createAntigravityHostCredentialBackend('/task-home')).toBe(backend)
+    expect(createAntigravityLinuxCredentialBackend).toHaveBeenCalledWith(
+      '/task-home/.gemini/antigravity-cli/cache/antigravity-keyring-unavailable'
+    )
+  })
 })

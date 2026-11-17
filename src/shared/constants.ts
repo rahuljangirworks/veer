@@ -142,7 +142,10 @@ export function getDefaultVoiceSettings(): VoiceSettings {
     userModels: [],
     openAiApiKeyConfigured: false,
     microphoneDeviceId: null,
-    microphoneDeviceLabel: null
+    microphoneDeviceLabel: null,
+    conversation: false,
+    conversationEndpoint: '',
+    conversationAllowPrivateHttp: false
   }
 }
 

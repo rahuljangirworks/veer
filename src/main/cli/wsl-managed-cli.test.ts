@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { installFakeAppEnvironment } from '../../../config/scripts/vitest-host-ports-setup'
 import { getManagedWslCliDir } from './wsl-managed-cli'
+import { DEV_COMMAND_NAME } from './cli-install-constants'
+import { LINUX_CLI_COMMAND_NAME } from './bundled-cli-launcher-path'
 
 const roots: string[] = []
 afterEach(() => {
@@ -24,7 +26,7 @@ describe('managed WSL CLI provisioning', () => {
   it('reuses a complete tree, repairs missing files, and isolates app identities and updates', () => {
     const host = fixture()
     const directory = getManagedWslCliDir(host) ?? ''
-    const launcher = join(directory, 'orca-ide')
+    const launcher = join(directory, LINUX_CLI_COMMAND_NAME)
     const modified = statSync(launcher).mtimeMs
     expect(getManagedWslCliDir(host)).toBe(directory)
     expect(statSync(launcher).mtimeMs).toBe(modified)
@@ -57,7 +59,7 @@ describe('managed WSL CLI provisioning', () => {
     writeFileSync(cliEntryPath, 'fixture')
     installFakeAppEnvironment({ getPath: () => host.userDataPath, getAppPath: () => appPath })
     const directory = getManagedWslCliDir({ ...host, isPackaged: false }) ?? ''
-    expect(readFileSync(join(directory, 'orca-dev'), 'utf8')).toContain(process.execPath)
+    expect(readFileSync(join(directory, DEV_COMMAND_NAME), 'utf8')).toContain(process.execPath)
     const bridge = readFileSync(join(directory, 'orca-wsl-bridge.ps1'), 'utf8')
     expect(bridge.startsWith('\uFEFF')).toBe(true)
     expect(bridge).toContain(host.userDataPath)

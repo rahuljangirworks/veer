@@ -75,5 +75,229 @@
     "text": "sidebar",
     "dynamic": false,
     "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "OmniRoute key saved securely.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Could not save OmniRoute key.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Could not clear OmniRoute key.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Restart Veer to load the updated voice installer.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Piper voice model is ready.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Could not install the Piper model.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "Restart Veer to load the updated voice settings.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Restart Veer to load the updated voice settings.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Checking voice setup. Try again in a moment.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Add an OmniRoute key.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "user-visible-call",
+    "text": "Install the Piper voice model.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "OmniRoute chat URL",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "https://gateway.example/v1/chat/completions",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "Use HTTPS, or HTTP on localhost. Enter the gateway’s /v1 URL or its full /v1/chat/completions URL.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "Allow HTTP to this private network gateway",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "Your API key and speech will travel unencrypted on this network.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-attribute:aria-label",
+    "text": "OmniRoute API key",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "Key saved",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "Using environment key",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "OmniRoute API key",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "Save",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "Clear",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "Piper model:",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-expression",
+    "text": "Checking...",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-expression",
+    "text": "Ready",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-expression",
+    "text": "Installing…",
+    "dynamic": true,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-expression",
+    "text": "Not installed",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-text",
+    "text": "Installs to",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-expression",
+    "text": "Installing…",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceConversationSwitch.tsx",
+    "kind": "jsx-expression",
+    "text": "Install Piper",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceSession.tsx",
+    "kind": "user-visible-call",
+    "text": "Voice playback could not be confirmed.",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/veer/voice/VoiceSession.tsx",
+    "kind": "user-visible-call",
+    "text": "Voice interruption failed.",
+    "dynamic": false,
+    "count": 1
   }
 ]

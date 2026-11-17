@@ -175,7 +175,7 @@ export function AntigravityAccountsSection({
         )}{' '}
         <a
           className="underline"
-          href="https://antigravity.google/docs/cli/install/"
+          href="https://antigravity.google/docs/install?tab=cli"
           target="_blank"
           rel="noopener noreferrer"
         >
