@@ -10,6 +10,7 @@ import { join } from 'node:path'
 import { installFakeAppEnvironment } from '../../../config/scripts/vitest-host-ports-setup'
 import { runProcess } from '@orca/process-host'
 import { sealedChildEnv } from './structured-session-child-env.test-support'
+import { DEV_COMMAND_NAME } from '../cli/cli-install-constants'
 
 const SESSION_ID = 'f7a1c0de-1111-4222-8333-444455556666'
 
@@ -35,7 +36,7 @@ export function createLoginShellHarness(): LoginShellHarness {
   }
   writeStub(join(globalBin, 'orca'), 'global')
   writeStub(join(appCliBin, 'orca'), 'app')
-  writeStub(join(appCliBin, 'orca-dev'), 'app')
+  writeStub(join(appCliBin, DEV_COMMAND_NAME), 'app')
   const prependGlobal = `export PATH="${globalBin}:$PATH"\n`
   writeFileSync(join(home, '.zprofile'), prependGlobal)
   writeFileSync(join(home, '.bash_profile'), prependGlobal)

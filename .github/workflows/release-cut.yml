@@ -851,7 +851,7 @@ jobs:
 
   terminal-rendering-golden:
     needs: cut
-    if: needs.cut.outputs.should_release == 'true'
+    if: needs.cut.outputs.should_release == 'true' && github.repository == 'stablyai/orca'
     name: golden e2e ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -2585,7 +2585,7 @@ jobs:
       - cut
     # Why: publish-complete-draft-releases can expose a recovered RC without
     # running the build/publish jobs; still advance the RC cask to that tag.
-    if: ${{ needs.cut.outputs.latest_published_rc_tag != '' }}
+    if: ${{ github.repository == 'stablyai/orca' && needs.cut.outputs.latest_published_rc_tag != '' }}
     uses: ./.github/workflows/homebrew-bump.yml
     with:
       tag: ${{ needs.cut.outputs.latest_published_rc_tag }}
@@ -2596,7 +2596,7 @@ jobs:
       - cut
       - publish-release
     # Why explicit: a skipped orcad-template (tags that predate it) would skip every job after it.
-    if: ${{ !cancelled() && needs.publish-release.result == 'success' && needs.cut.outputs.tag != '' && startsWith(needs.cut.outputs.tag, 'v') }}
+    if: ${{ github.repository == 'stablyai/orca' && !cancelled() && needs.publish-release.result == 'success' && needs.cut.outputs.tag != '' && startsWith(needs.cut.outputs.tag, 'v') }}
     uses: ./.github/workflows/homebrew-bump.yml
     with:
       tag: ${{ needs.cut.outputs.tag }}

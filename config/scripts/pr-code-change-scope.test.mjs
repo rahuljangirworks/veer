@@ -591,8 +591,11 @@ describe('PR Checks skip wiring', () => {
       '${{ steps.filter.outputs.should_run }}'
     )
     for (const jobName of expensiveJobs) {
+      const packageGate = ['package', 'package_windows'].includes(jobName)
+        ? "(github.repository != 'rahuljangirworks/veer' || vars.VEER_CROSS_PLATFORM_PACKAGES == 'true') && "
+        : ''
       expect(prWorkflow.jobs.code_paths.outputs[jobName], jobName).toBe(
-        `\${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.${jobName} }}`
+        `\${{ ${packageGate}steps.readiness.outputs.reused != 'true' && steps.filter.outputs.${jobName} }}`
       )
     }
   })

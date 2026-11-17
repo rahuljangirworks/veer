@@ -12,8 +12,13 @@ import {
   saveOpenAiSpeechApiKey
 } from '../speech/openai-api-key-store'
 import type { Store } from '../persistence'
+import type { VeerDictationOptions } from '../../shared/personal-fork-voice'
+import { attachVeerVoiceDictation } from '../veer/voice/dictation-host'
+import { registerVoiceSetupHandlers } from '../veer/voice/setup-ipc'
+import { readVeerDictationArgs } from '../veer/voice'
 
 export function registerSpeechHandlers(store: Store): void {
+  registerVoiceSetupHandlers(store)
   ipcMain.handle('speech:getCatalog', () => {
     return SPEECH_MODEL_CATALOG
   })
@@ -89,11 +94,21 @@ export function registerSpeechHandlers(store: Store): void {
   const getDesktopOwner = (senderId: number, sessionId: string): string =>
     `desktop:${senderId}:${sessionId}`
 
-  const dictationListeners = new Map<number, { owner: string; cleanup: () => void }>()
+  const dictationListeners = new Map<
+    number,
+    { owner: string; cleanup: (preserveVoice?: boolean) => void }
+  >()
 
   ipcMain.handle(
     'speech:startDictation',
-    async (event, modelId: string, hotwords?: string[], sessionId = 'desktop') => {
+    async (
+      event,
+      modelId: string,
+      hotwords?: string[],
+      sessionOrOptions?: string | VeerDictationOptions,
+      options?: VeerDictationOptions
+    ) => {
+      const { sessionId, conversation } = readVeerDictationArgs(sessionOrOptions, options)
       const window = BrowserWindow.fromWebContents(event.sender)
       if (!window) {
         return
@@ -116,9 +131,10 @@ export function registerSpeechHandlers(store: Store): void {
           })
           .catch(() => {})
       }
-      const cleanupSessionListener = (): void => {
+      const cleanupSessionListener = (preserveVoice = false): void => {
         sessionListenerRemoved = true
         window.off('closed', cleanupOnWindowClosed)
+        attachVeerVoiceDictation({ kind: 'release', owner, preserveVoice })
         if (dictationListeners.get(senderId)?.cleanup === cleanupSessionListener) {
           dictationListeners.delete(senderId)
         }
@@ -177,9 +193,10 @@ export function registerSpeechHandlers(store: Store): void {
                 break
               case 'final':
                 window.webContents.send('speech:final', { text: msg.text ?? '', sessionId })
+                attachVeerVoiceDictation({ kind: 'final', owner, text: msg.text ?? '' })
                 break
               case 'stopped':
-                cleanupSessionListener()
+                cleanupSessionListener(true)
                 window.webContents.send('speech:stopped', { sessionId })
                 break
               case 'error':
@@ -197,6 +214,17 @@ export function registerSpeechHandlers(store: Store): void {
         // Coalesced starts install no sink; only an accepted start supersedes the close hook.
         if (sessionReady) {
           dictationListeners.get(senderId)?.cleanup()
+          attachVeerVoiceDictation({
+            kind: 'accept',
+            store,
+            owner,
+            senderId,
+            conversation,
+            window,
+            sessionId,
+            windowClosed,
+            attach: !sessionListenerRemoved
+          })
           if (!sessionListenerRemoved) {
             dictationListeners.set(senderId, { owner, cleanup: cleanupSessionListener })
           }
@@ -235,7 +263,7 @@ export function registerSpeechHandlers(store: Store): void {
     const listener = dictationListeners.get(_event.sender.id)
     await getSpeechSttService(store).stopDictation(owner)
     if (listener?.owner === owner) {
-      listener.cleanup()
+      listener.cleanup(true)
     }
   })
 }

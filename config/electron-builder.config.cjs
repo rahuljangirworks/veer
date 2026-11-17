@@ -730,6 +730,14 @@ module.exports = {
         to: 'bin/orca-ide'
       },
       {
+        from: 'resources/linux/bin/veer-ide',
+        to: 'bin/veer-ide'
+      },
+      {
+        from: 'resources/linux/bin/veer-ide',
+        to: 'bin/veer'
+      },
+      {
         from: 'node_modules/agent-browser/bin/agent-browser-linux-${arch}',
         to: 'agent-browser-linux-${arch}'
       },

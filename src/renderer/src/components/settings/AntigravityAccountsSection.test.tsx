@@ -105,7 +105,7 @@ describe('native Antigravity Accounts', () => {
     expect(screen.getAllByText('synthetic@example.invalid')).toHaveLength(2)
     expect(screen.getByText(/use \/logout in agy/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Sign-in instructions' }).getAttribute('href')).toBe(
-      'https://antigravity.google/docs/cli/install/'
+      'https://antigravity.google/docs/install?tab=cli'
     )
     expect(screen.getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(true)
   })

@@ -79,4 +79,10 @@ export type VoiceSettings = {
   microphoneDeviceId: string | null
   /** Cached label for display when the preferred device is unplugged */
   microphoneDeviceLabel: string | null
+  /** Spoken reply loop. Off keeps inserting the final transcript. */
+  conversation: boolean
+  /** OpenAI-compatible chat completions endpoint for voice replies. */
+  conversationEndpoint?: string
+  /** Explicitly allow unencrypted requests to an RFC1918 IPv4 gateway. */
+  conversationAllowPrivateHttp?: boolean
 }

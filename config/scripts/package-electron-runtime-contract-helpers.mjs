@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join, resolve } from 'node:path'
-import { relayArtifactFilenames } from '../../src/shared/relay-artifacts.ts'
+import { relayArtifactFilenames } from '../../src/main/ssh/relay-install-artifacts.ts'
 
 const projectDir = resolve(import.meta.dirname, '../..')
 const require = createRequire(import.meta.url)

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Resolve the app root from this launcher even when invoked through a PATH
-# symlink. The canonical packaged app executable is `veer-ide`.
+# symlink. Prefer the Veer executable, then accept the legacy binary name.
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do
   DIR="$(cd "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"

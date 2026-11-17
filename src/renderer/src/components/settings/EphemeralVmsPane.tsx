@@ -45,45 +45,81 @@ function ProxmoxSettingsPanel(): React.JSX.Element {
 
   return (
     <div className="space-y-4 rounded-lg border border-border/60 bg-card/30 p-4">
-      <div className="text-sm font-medium">Proxmox API Configuration</div>
+      <div className="text-sm font-medium">
+        {translate(
+          'auto.components.settings.EphemeralVmsPane.proxmoxConfiguration',
+          'Proxmox API Configuration'
+        )}
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1">
-          <Label>Host URL</Label>
+          <Label>
+            {translate('auto.components.settings.EphemeralVmsPane.hostUrl', 'Host URL')}
+          </Label>
           <Input
-            placeholder="https://192.168.1.100:8006"
+            placeholder={translate(
+              'auto.components.settings.EphemeralVmsPane.hostUrlExample',
+              'https://192.168.1.100:8006'
+            )}
             value={proxmoxLxcSettings.hostUrl}
             onChange={(e) => handleChange('hostUrl', e.target.value)}
           />
         </div>
         <div className="space-y-1">
-          <Label>Node Name</Label>
+          <Label>
+            {translate('auto.components.settings.EphemeralVmsPane.nodeName', 'Node Name')}
+          </Label>
           <Input
-            placeholder="pve"
+            placeholder={translate(
+              'auto.components.settings.EphemeralVmsPane.nodeNameExample',
+              'pve'
+            )}
             value={proxmoxLxcSettings.node}
             onChange={(e) => handleChange('node', e.target.value)}
           />
         </div>
         <div className="space-y-1">
-          <Label>API Token ID</Label>
+          <Label>
+            {translate('auto.components.settings.EphemeralVmsPane.apiTokenId', 'API Token ID')}
+          </Label>
           <Input
-            placeholder="root@pam!agent"
+            placeholder={translate(
+              'auto.components.settings.EphemeralVmsPane.apiTokenIdExample',
+              'root@pam!agent'
+            )}
             value={proxmoxLxcSettings.apiTokenId}
             onChange={(e) => handleChange('apiTokenId', e.target.value)}
           />
         </div>
         <div className="space-y-1">
-          <Label>API Token Secret</Label>
+          <Label>
+            {translate(
+              'auto.components.settings.EphemeralVmsPane.apiTokenSecret',
+              'API Token Secret'
+            )}
+          </Label>
           <Input
             type="password"
-            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            placeholder={translate(
+              'auto.components.settings.EphemeralVmsPane.apiTokenSecretExample',
+              'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+            )}
             value={proxmoxLxcSettings.apiTokenSecret}
             onChange={(e) => handleChange('apiTokenSecret', e.target.value)}
           />
         </div>
         <div className="space-y-1 md:col-span-2">
-          <Label>Base Template ID / Name</Label>
+          <Label>
+            {translate(
+              'auto.components.settings.EphemeralVmsPane.baseTemplateIdName',
+              'Base Template ID / Name'
+            )}
+          </Label>
           <Input
-            placeholder="9000 (Ubuntu 22.04 Template)"
+            placeholder={translate(
+              'auto.components.settings.EphemeralVmsPane.baseTemplateExample',
+              '9000 (Ubuntu 22.04 Template)'
+            )}
             value={proxmoxLxcSettings.baseTemplateId}
             onChange={(e) => handleChange('baseTemplateId', e.target.value)}
           />

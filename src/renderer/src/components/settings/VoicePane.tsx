@@ -15,6 +15,7 @@ import { VoiceSpeechModelSection } from './VoiceSpeechModelSection'
 import { matchesSettingsSearch } from './settings-search'
 import { getOpenaiTranscriptionSearchEntry } from './voice-pane-search'
 import { translate } from '@/i18n/i18n'
+import { VoiceConversationSwitch } from '@/veer/voice'
 
 export { handleVoiceDictationToggle }
 
@@ -224,6 +225,10 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
         voiceSettings={voiceSettings}
         permissionPending={permissionPending}
         onToggleVoiceDictation={() => void toggleVoiceDictation()}
+        onUpdateVoiceSettings={updateVoiceSettings}
+      />
+      <VoiceConversationSwitch
+        voiceSettings={voiceSettings}
         onUpdateVoiceSettings={updateVoiceSettings}
       />
 

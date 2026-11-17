@@ -3,6 +3,10 @@ import { join, dirname } from 'node:path'
 import { writeCredentialFileAtomic } from '../integration-credential-file'
 import { parseAntigravityNativeCredential } from './native-credential-codec'
 import {
+  createAntigravityLinuxCredentialBackend,
+  isAntigravityLinuxSecretServiceReady
+} from './native-linux-credentials'
+import {
   readAntigravityMacOSCredential,
   writeAntigravityMacOSCredential
 } from './native-macos-credentials'
@@ -61,6 +65,7 @@ export function createAntigravityHostCredentialBackend(home: string): Antigravit
     )
   }
   const root = join(home, '.gemini', 'antigravity-cli')
+  const marker = join(root, 'cache', 'antigravity-keyring-unavailable')
   const file = createAntigravityFileCredentialBackend(join(root, 'antigravity-oauth-token'))
   let kernelRelease = ''
   if (process.platform === 'linux') {
@@ -73,12 +78,24 @@ export function createAntigravityHostCredentialBackend(home: string): Antigravit
   if (isAntigravityFileStorageHost(process.env, kernelRelease)) {
     return file
   }
+  if (process.platform === 'linux') {
+    if (existsSync(marker)) {
+      throw new Error(
+        'Antigravity has a keyring fallback marker; Orca cannot verify which credential store agy will use.'
+      )
+    }
+    if (!isAntigravityLinuxSecretServiceReady()) {
+      throw new Error(
+        'Native Antigravity account switching is not supported on this host yet. Windows Credential Manager and Linux Secret Service need a verified adapter.'
+      )
+    }
+    return createAntigravityLinuxCredentialBackend(marker)
+  }
   if (process.platform !== 'darwin') {
     throw new Error(
       'Native Antigravity account switching is not supported on this host yet. Windows Credential Manager and Linux Secret Service need a verified adapter.'
     )
   }
-  const marker = join(root, 'cache', 'antigravity-keyring-unavailable')
   async function read() {
     if (existsSync(marker)) {
       throw new Error(

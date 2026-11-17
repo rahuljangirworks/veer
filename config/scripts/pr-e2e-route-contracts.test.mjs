@@ -393,7 +393,7 @@ describe('orcad-e2e-routing', () => {
         e2e_needs_build: true
       })
     }
-    expect(jobs['orcad-ssh-docker'].needs).toEqual(['build'])
+    expect(jobs['orcad-ssh-docker'].needs).toEqual(['build', 'orcad-glibc-slot'])
   })
 
   it('runs every managed-SSH spec in one sharded lane, only when one is routed', () => {

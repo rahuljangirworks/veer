@@ -11,6 +11,7 @@ const EXPECTED_MATRIX = {
   '.github/workflows/e2e.yml#build': { contents: 'read' },
   '.github/workflows/e2e.yml#changed-e2e': { contents: 'read' },
   '.github/workflows/e2e.yml#e2e': { contents: 'read' },
+  '.github/workflows/e2e.yml#orcad-glibc-slot': { contents: 'read' },
   '.github/workflows/e2e.yml#orcad-serve-mode-switch': { contents: 'read' },
   '.github/workflows/e2e.yml#orcad-serve-mode-switch-windows': { contents: 'read' },
   '.github/workflows/e2e.yml#orcad-ssh-docker': { contents: 'read' },

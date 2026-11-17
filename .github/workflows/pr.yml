@@ -28,7 +28,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft != true
     name: detect changes and check repository guards
     # Start routing without waiting behind the GitHub-hosted test queue.
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ${{ github.repository == 'rahuljangirworks/veer' && 'ubuntu-24.04' || 'blacksmith-2vcpu-ubuntu-2404' }}
     timeout-minutes: 5
     permissions:
       contents: read
@@ -50,8 +50,10 @@ jobs:
       orcad_browser: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.orcad_browser }}
       cross-version-wire: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.cross-version-wire }}
       managed_hook_node18: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.managed_hook_node18 }}
-      package: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.package }}
-      package_windows: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.package_windows }}
+      # Veer packages only the Fedora RPM in fedora-rpm.yml for now. Keep the
+      # original package lanes available through a repository variable.
+      package: ${{ (github.repository != 'rahuljangirworks/veer' || vars.VEER_CROSS_PLATFORM_PACKAGES == 'true') && steps.readiness.outputs.reused != 'true' && steps.filter.outputs.package }}
+      package_windows: ${{ (github.repository != 'rahuljangirworks/veer' || vars.VEER_CROSS_PLATFORM_PACKAGES == 'true') && steps.readiness.outputs.reused != 'true' && steps.filter.outputs.package_windows }}
       layout_oracle: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.layout_oracle }}
       dependency_isolation: ${{ steps.readiness.outputs.reused != 'true' && steps.filter.outputs.dependency_isolation }}
       e2e_should_run: ${{ steps.e2e_filter.outputs.should_run }}
@@ -183,7 +185,7 @@ jobs:
     needs: [code_paths]
     if: needs.code_paths.outputs.static_analysis == 'true' || needs.code_paths.outputs.typecheck == 'true'
     # Leave headroom for typechecking and overlapping checks.
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    runs-on: ${{ github.repository == 'rahuljangirworks/veer' && 'ubuntu-24.04' || 'blacksmith-8vcpu-ubuntu-2404' }}
     outputs:
       shards: ${{ steps.unit-plan.outputs.shards }}
       managed_hook_node18: ${{ steps.managed_hook_node18.outcome }}
@@ -597,7 +599,9 @@ jobs:
       needs.code_paths.result == 'success' &&
       needs.code_paths.outputs.git_compatibility == 'true' &&
       needs.preflight.result == 'success'
-    runs-on: ubuntu-latest
+    # Git 2.25.5 uses `thread_local` as an identifier; GCC 15 on ubuntu-latest
+    # treats it as a keyword and cannot build the compatibility baseline.
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
@@ -937,7 +941,7 @@ jobs:
     uses: ./.github/workflows/unit-tests.yml
     with:
       node_versions: '["24"]'
-      runner: blacksmith-4vcpu-ubuntu-2404
+      runner: ${{ github.repository == 'rahuljangirworks/veer' && 'ubuntu-24.04' || 'blacksmith-4vcpu-ubuntu-2404' }}
       phase_diagnostics: true
       shards: ${{ needs.preflight.outputs.shards }}
       run_shards: ${{ needs.code_paths.outputs.mobile_ci_tools != 'true' }}
@@ -1072,9 +1076,38 @@ jobs:
           DIFF_BASE="$(node config/scripts/git-pull-request-diff-base.mjs "$BASE_SHA")"
           pnpm run check:runtime-launcher-protocol-ratchet -- --base "$DIFF_BASE"
 
+      # Veer's fork has only its own release tags. The fixtures below exercise
+      # the named upstream releases, while the daemon gate above keeps Veer's tag.
+      - name: Fetch upstream wire compatibility fixtures on Veer
+        if: github.repository == 'rahuljangirworks/veer'
+        run: |
+          git fetch --no-tags --depth=1 https://github.com/stablyai/orca.git \
+            +refs/tags/v1.4.169:refs/tags/v1.4.169 \
+            +refs/tags/v1.4.175:refs/tags/v1.4.175 \
+            +refs/tags/v1.4.176:refs/tags/v1.4.176 \
+            +refs/tags/v1.4.177:refs/tags/v1.4.177 \
+            +refs/tags/v1.4.184:refs/tags/v1.4.184 \
+            +refs/tags/v1.4.185:refs/tags/v1.4.185 \
+            +refs/tags/v1.4.190:refs/tags/v1.4.190 \
+            +refs/tags/v1.4.199:refs/tags/v1.4.199 \
+            +refs/tags/v1.4.205:refs/tags/v1.4.205 \
+            +refs/tags/v1.4.211:refs/tags/v1.4.211 \
+            +refs/tags/v1.4.212:refs/tags/v1.4.212 \
+            +refs/tags/v1.4.214:refs/tags/v1.4.214 \
+            +refs/tags/v1.4.218:refs/tags/v1.4.218 \
+            +refs/tags/v1.4.219:refs/tags/v1.4.219 \
+            +refs/tags/v1.4.220:refs/tags/v1.4.220 \
+            +refs/tags/v1.4.221:refs/tags/v1.4.221 \
+            +refs/tags/v1.4.222:refs/tags/v1.4.222 \
+            +refs/tags/v1.4.224:refs/tags/v1.4.224 \
+            +refs/tags/v1.4.228:refs/tags/v1.4.228
+
       # Runs the whole directory so a new file there cannot be left out; an empty match
       # exits 1 ("No test files found"), so this lane cannot pass while running zero tests.
       - name: Old/new client and server compatibility journeys
+        env:
+          # This is the first tagged upstream build with all modules these journeys read.
+          ORCA_CROSS_VERSION_BASELINE_REF: ${{ github.repository == 'rahuljangirworks/veer' && 'v1.4.228' || '' }}
         run: pnpm exec vitest run --config config/vitest.config.ts tests/e2e/cross-version-wire/
 
   managed_hook_node18:
@@ -1597,7 +1630,7 @@ jobs:
       !cancelled() &&
       needs.code_paths.result == 'success' &&
       needs.code_paths.outputs.dependency_isolation == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ github.repository == 'rahuljangirworks/veer' && 'ubuntu-24.04' || 'blacksmith-4vcpu-ubuntu-2404' }}
     timeout-minutes: 30
     env:
       ORCA_PNPM_FORCE_GLOBAL_VIRTUAL_STORE_IN_CI: '1'
@@ -1667,7 +1700,7 @@ jobs:
       - layout_oracle
       - dependency_isolation
     # Report settled results without competing with the GitHub-hosted test queue.
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    runs-on: ${{ github.repository == 'rahuljangirworks/veer' && 'ubuntu-22.04' || 'blacksmith-2vcpu-ubuntu-2204' }}
     timeout-minutes: 5
 
     steps:
